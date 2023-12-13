@@ -34,6 +34,7 @@ Models to train:
 """
 
 def TransformerEncoder(input_dim, 
+                       output_dim,
                        num_transformer_blocks, 
                        head_size, num_heads, 
                        ff_dim, 
@@ -66,7 +67,7 @@ def TransformerEncoder(input_dim,
     for i, dim in enumerate(mlp_units):
         x = tf.keras.layers.Dense(dim, activation="relu", name=f"dense_layer_{i}")(x)
         x = tf.keras.layers.Dropout(mlp_dropout)(x)
-    outputs = tf.keras.layers.Dense(1, name="transformer_output")(x)
+    outputs = tf.keras.layers.Dense(output_dim, name="transformer_output")(x)
 
     model = tf.keras.Model(inputs=inputs, outputs=outputs, name="Transformer")
 
@@ -91,10 +92,8 @@ def trainTransformer(data,
                 )
 
     reframed = series_to_supervised(data, config.sequence_length, 1)
-        
     # Drop the Returns column (1st)
     reframed.drop(reframed.columns[input_dim:], axis=1, inplace=True)
-
     
     # Split into train and test sets (80-20)
     train_split = config.train_split
@@ -105,16 +104,19 @@ def trainTransformer(data,
     validation = values[int(len(values)*train_split):int(len(values)*val_split), :] 
     
     # Split into input and outputs    
-    train_input, train_output = train[:, 1:], train[:, 0]
-    val_input, val_output = validation[:, 1:], validation[:, 0]
+    train_input, train_output = train[:, :], train[:, 1:]
+    val_input, val_output = validation[:, :], validation[:, 1:]
     
     # Reshape input to be 3D [samples, timesteps, features]
     train_input = train_input.reshape((train_input.shape[0], config.sequence_length, train_input.shape[1]))
     val_input = val_input.reshape((val_input.shape[0], config.sequence_length, val_input.shape[1]))
     #print(train_input.shape, train_output.shape, val_input.shape, val_output.shape)
     
+    config.input_dim = data.shape[1]
+    config.output_dim = data.shape[1] - 1
     model = TransformerEncoder(
-        input_dim-1, 
+        config.input_dim,
+        config.output_dim,
         num_transformer_blocks, 
         head_size, 
         num_heads, 
@@ -152,7 +154,7 @@ def trainTransformer(data,
     
     model.save(f"../saved_models/Transformer_FedModel_{specification_set}.keras")
 
-def LSTM(input_dim):
+def LSTM(input_dim, output_dim):
     # Design an LSTM to predict the next value of the time series
     inputs = tf.keras.layers.Input(shape=(config.sequence_length, input_dim), name="input_layer")
     x = tf.keras.layers.Bidirectional(
@@ -166,7 +168,7 @@ def LSTM(input_dim):
         config.filters[2], name=f"LSTM_layer_{config.filters[2]}", recurrent_dropout=.1))(x)
     x = tf.keras.layers.Dense(config.lstm_mlp_units[0], name="dense_layer")(x)
     x = tf.keras.layers.Dense(config.lstm_mlp_units[1], name="dense_layer_2")(x)
-    outputs = tf.keras.layers.Dense(1, name="output_layer")(x)
+    outputs = tf.keras.layers.Dense(output_dim, name="output_layer")(x)
     model = tf.keras.models.Model(inputs=inputs, outputs=outputs, name="LSTM")
 
     return model
@@ -174,10 +176,8 @@ def LSTM(input_dim):
 def train_LSTM(data, input_dim, specification_set, plot=False):
     
     reframed = series_to_supervised(data, config.sequence_length, 1)
-        
     # Drop the Returns column (1st)
     reframed.drop(reframed.columns[input_dim:], axis=1, inplace=True)
-
     
     # Split into train and test sets (80-20)
     train_split = config.train_split
@@ -188,16 +188,18 @@ def train_LSTM(data, input_dim, specification_set, plot=False):
     validation = values[int(len(values)*train_split):int(len(values)*val_split), :] 
     
     # Split into input and outputs    
-    train_input, train_output = train[:, 1:], train[:, 0]
-    val_input, val_output = validation[:, 1:], validation[:, 0]
+    train_input, train_output = train[:, :], train[:, 1:]
+    val_input, val_output = validation[:, :], validation[:, 1:]
     
     # Reshape input to be 3D [samples, timesteps, features]
     train_input = train_input.reshape((train_input.shape[0], config.sequence_length, train_input.shape[1]))
     val_input = val_input.reshape((val_input.shape[0], config.sequence_length, val_input.shape[1]))
     #print(train_input.shape, train_output.shape, val_input.shape, val_output.shape)
-    
+    print(train_input.shape, train_output.shape, val_input.shape, val_output.shape)
     # Read model
-    model = LSTM(input_dim-1)
+    config.input_dim = data.shape[1]
+    config.output_dim = data.shape[1] - 1
+    model = LSTM(config.input_dim, config.output_dim)
     
     # Stop training when a monitored quantity has stopped improving for 3 consecutive epochs.
     callbacks = tf.keras.callbacks.EarlyStopping(
@@ -243,7 +245,7 @@ def linearModels(data, specification_set, algorithm="LR"):
     train = values[:int(len(values)*train_split), :].real
 
     # Split into input and outputs
-    train_input, train_output = train[:, 1:], train[:, 0]
+    train_input, train_output = train[:, :], train[:, 1:]
 
     # Fit model
     model.fit(train_input, train_output)
@@ -285,7 +287,7 @@ def decisionTree(data, specification_set):
     train = values[:int(len(values)*train_split), :]
 
     # Split into input and outputs
-    train_input, train_output = train[:, 1:], train[:, 0]
+    train_input, train_output = train[:, :], train[:, 1:]
 
     # Fit model
     model.fit(train_input, train_output)

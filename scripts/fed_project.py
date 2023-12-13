@@ -29,15 +29,12 @@ from forecasting_models import (
 config = Config()
 data_prep = DataPrep()
 
-# Choose whether to scale data or not
-scale_data = False
-
 # Load data
 specifications_set = int(input("Choose specifications set (0, 1, 2): "))
 df = data_prep.read_data(specifications_set=specifications_set)
 
 # Input dimension (only for LSTM & Transformer)
-input_dim = df.shape[1] + 1
+input_dim = df.shape[1]
 
 """
 Train the models:

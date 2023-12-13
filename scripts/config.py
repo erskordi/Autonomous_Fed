@@ -1,8 +1,8 @@
 class Config(object):
     def __init__(self) -> None:
         # Parameters
-        self.input_dim = 3  # Dimension of input data (GDP gap, inflation rates, interest rates)
-        self.output_dim = 2  # Dimension of output data (GDP gap, inflation rates)
+        self.input_dim = 4  # Dimension of input data (GDP gap, inflation rates(x2), interest rates)
+        self.output_dim = 3  # Dimension of output data (GDP gap, inflation rates(x2))
         self.input_shape = (self.input_dim,)
         self.intermediate_dim = 16
         self.latent_dim = 2
