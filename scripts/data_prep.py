@@ -1,15 +1,82 @@
+import numpy as np
 import pandas as pd
 import ray
-from ray.data.preprocessors import MinMaxScaler, Concatenator
 
 from copy import deepcopy
 from config import Config
 
+import matplotlib.pyplot as plt
+
+def plotting(data):
+    norm_data, freq_data = data
+    # Plot the original inflation rate time series
+    plt.figure(figsize=(12, 4))
+    plt.plot(norm_data)
+    plt.title('Inflation Rate Time Series')
+    plt.xlabel('Time')
+    plt.ylabel('Inflation Rate')
+    plt.show()
+
+    # Plot the spectrogram
+    plt.figure(figsize=(12, 4))
+    plt.plot(freq_data)  # Using log scale for better visualization
+    plt.title('STFT - Spectrogram of Inflation Rate')
+    plt.xlabel('Time')
+    plt.ylabel('Frequency')
+    plt.show()
+
+# Generator function for creating sequences
+def gen_seq(id_df, seq_length, seq_cols):
+
+    data_matrix =  id_df[seq_cols]
+    num_elements = data_matrix.shape[0]
+
+    for start, stop in zip(range(0, num_elements-seq_length, 1), range(seq_length, num_elements, 1)):
+        
+        yield data_matrix[stop-seq_length:stop].values.reshape((-1,len(seq_cols)))
+
+# convert series to supervised learning
+def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
+    """
+    Frames a dataframe as a supervised learning dataset.
+    Arguments:
+        data: Sequence of observations as a list or NumPy array.
+        n_in: Number of lag observations as input (X).
+        n_out: Number of observations as output (y).
+        dropnan: Boolean whether or not to drop rows with NaN values.
+
+    Returns:
+        Pandas DataFrame of series framed for supervised learning.
+    """
+
+    n_vars = data.shape[1]
+    df = pd.DataFrame(data)
+    cols, names = list(), list()
+    # input sequence (t-n, ... t-1)
+    for i in range(n_in, 0, -1):
+        cols.append(df.shift(i))
+        names += [('var%d(t-%d)' % (j+1, i)) for j in range(n_vars)]
+    # forecast sequence (t, t+1, ... t+n)
+    for i in range(0, n_out):
+        cols.append(df.shift(-i))
+        if i == 0:
+            names += [('var%d(t)' % (j+1)) for j in range(n_vars)]
+        else:
+            names += [('var%d(t+%d)' % (j+1, i)) for j in range(n_vars)]
+    # put it all together
+    agg = pd.concat(cols, axis=1)
+    agg.columns = names
+    # drop rows with NaN values
+    if dropnan:
+        agg.dropna(inplace=True)
+    return agg
+
 class DataPrep:
     def __init__(self) -> None:
         self.config = Config()
+        self.e = 1e-7
     
-    def col_names(self, suffix: str):
+    def col_names(self):
         return {
             #'Inflation 1 Implicit GDP price deflator (%)': "inflation_1"+suffix, 
             #"Inflation 2 PCE Index (%)": "inflation_2"+suffix,
@@ -17,43 +84,104 @@ class DataPrep:
             "Output GAP (%)": "output_gap",
             "Inflation 2 PCE Index (%) residuals": "inflation_residuals"
             }
-
-    def scaling(self, columns: list):
-        return MinMaxScaler(
-            columns=columns
-        )
     
-    def read_data(self):
+    def read_data(self, specifications_set, read_only: bool = False):
         # Read data
-        df = pd.read_csv(self.config.path_to_data)
-        df = df.drop(columns=['Inflation 1 Implicit GDP price deflator (%)',
-                              'Inflation 2 PCE Index (%)',
-                              'Frequency: Quarterly observation_date',
-                              'GDP (Billion $)',
-                              'Potential GDP (Billion $)'])
-        df["FEDFUNDS (%)"] = df["FEDFUNDS (%)"].map(lambda x: (1+x)/100)
-        df["Output GAP (%)"] = df["Output GAP (%)"].map(lambda x: (1+x)/100)
-        df["Inflation 2 PCE Index (%) residuals"] = df["Inflation 2 PCE Index (%) residuals"].map(lambda x: (1+x)/100)
+        if specifications_set == 0:
+            column_names = ['FEDFUNDS',
+                            'Inflation_1',
+                            'Inflation_residuals',
+                            'Output_GAP'
+                        ]
 
-        df.rename(columns=self.col_names(self.config.suffix_prior), inplace=True)
+            df = pd.read_excel(self.config.path_to_data,
+                            sheet_name="FRED Graph",
+                            skiprows=range(9),
+                            names=column_names,
+                            usecols='D,B,H,E',
+                            skipfooter=21
+                            )
+
+            df.dropna(inplace=True)
+            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
+            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x)/100)
+            df["Inflation_residuals"] = df["Inflation_residuals"].map(lambda x: (1+x)/100)
+            df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1+x)/100)
+        elif specifications_set == 1:
+            column_names = ['FEDFUNDS',
+                            'CPI_Inflation',
+                            'Output_GAP'
+                        ]
+
+            df = pd.read_excel(self.config.path_to_data,
+                            sheet_name="FRED Graph",
+                            skiprows=range(9),
+                            names=column_names,
+                            usecols='D,K,E',
+                            skipfooter=21
+                            )
+
+            df.dropna(inplace=True)
+            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
+            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x)/100)
+            df["CPI_Inflation"] = df["CPI_Inflation"].map(lambda x: (1+x)/100)
+        elif specifications_set == 2:
+            column_names = ['FEDFUNDS',
+                            'log_GDP',
+                            'log_potential_GDP',
+                            'log_CPI'
+                        ]
+
+            df = pd.read_excel(self.config.path_to_data,
+                            sheet_name="FRED Graph",
+                            skiprows=range(9),
+                            names=column_names,
+                            usecols='D,L:N',
+                            skipfooter=21
+                            )
+
+            df.dropna(inplace=True)
+            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
+            df["log_GDP"] = df["log_GDP"].map(lambda x: (1+x)/100)
+            df["log_potential_GDP"] = df["log_potential_GDP"].map(lambda x: (1+x)/100)
+            df["log_CPI"] = df["log_CPI"].map(lambda x: (1+x)/100)
         
-        train_dataset = ray.data.from_pandas(df)
+        if read_only:
+            from ray.data.preprocessors import MinMaxScaler
 
-        preprocessor = self.scaling(columns=self.col_names(self.config.suffix_prior).values())
-        
-        df = preprocessor.fit_transform(train_dataset).to_pandas()
+            def scaling(columns: list):
+                return MinMaxScaler(
+                    columns=columns
+                )
 
-        # Split df to train and validation sets
-        #split_point = int(len(df)*0.8)
-       # train_dataset = df[:split_point]
-        #validation_dataset = df[split_point:]
+            df.rename(columns=self.col_names(), inplace=True)
+            train_dataset = ray.data.from_pandas(df)
+            preprocessor = scaling(columns=self.col_names().values())
+            df = preprocessor.fit_transform(train_dataset).to_pandas()
+            
 
-        #df = ray.data.from_pandas(train_dataset)
-        #df = Concatenator(output_column_name="features").fit_transform(df)#.to_pandas()
+            return df
+        else:
+            from sklearn.preprocessing import MinMaxScaler
 
-        return df#train_dataset, validation_dataset
+            input_data = df.values
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            normalized_input_data = scaler.fit_transform(input_data)
+            df = pd.DataFrame(normalized_input_data, columns=column_names)
+
+            return df
+        """"""
+        return df
+    
+    def inverse_transform(self, data):
+        from sklearn.preprocessing import MinMaxScaler
+
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        return scaler.inverse_transform(data)
 
 if __name__ == "__main__":
     
     data_prep = DataPrep()
     df = data_prep.read_data()
+    print(df.head())
+
