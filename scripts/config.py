@@ -8,7 +8,7 @@ class Config(object):
         self.latent_dim = 2
         self.batch_size = 64
         self.epochs = 1000
-        self.VAE_neurons = [32, 16, 4]
+        self.dense_neurons = [256, 256, 128, 64, 32]
 
         # Split data
         self.train_split = 0.8
