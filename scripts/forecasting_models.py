@@ -74,7 +74,6 @@ def TransformerEncoder(input_dim,
     return model
 
 def trainTransformer(data,
-                     input_dim,
                      num_transformer_blocks,
                      head_size,
                      num_heads,
@@ -86,15 +85,17 @@ def trainTransformer(data,
     ):
 
     def custom_learning_rate(epoch):
-        return (np.sqrt(input_dim) * 
+        return (np.sqrt(data.shape[1]) * 
                 np.min([np.power(epoch+1, -0.5), 
                 np.power(epoch+1, -0.5) * np.power(50, -1.5)])
                 )
 
     reframed = series_to_supervised(data, config.sequence_length, 1)
-    # Drop the Returns column (1st)
-    reframed.drop(reframed.columns[input_dim:], axis=1, inplace=True)
-    
+
+    # Keep the t-1 columns for all four features, drop the t columns for 
+    # the features to be predicted (all except FEDFUNDS)
+    reframed.drop(reframed.columns[data.shape[1]+1:], axis=1, inplace=True)
+
     # Split into train and test sets (80-20)
     train_split = config.train_split
     val_split = config.val_split
@@ -104,9 +105,9 @@ def trainTransformer(data,
     validation = values[int(len(values)*train_split):int(len(values)*val_split), :] 
     
     # Split into input and outputs    
-    train_input, train_output = train[:, :], train[:, 1:]
-    val_input, val_output = validation[:, :], validation[:, 1:]
-    
+    train_input, train_output = train[:, :-1], train[:, 1:-1]
+    val_input, val_output = validation[:, :-1], validation[:, 1:-1]
+
     # Reshape input to be 3D [samples, timesteps, features]
     train_input = train_input.reshape((train_input.shape[0], config.sequence_length, train_input.shape[1]))
     val_input = val_input.reshape((val_input.shape[0], config.sequence_length, val_input.shape[1]))
@@ -115,8 +116,8 @@ def trainTransformer(data,
     config.input_dim = data.shape[1]
     config.output_dim = data.shape[1] - 1
     model = TransformerEncoder(
-        config.input_dim,
-        config.output_dim,
+        train_input.shape[-1],
+        train_output.shape[-1],
         num_transformer_blocks, 
         head_size, 
         num_heads, 
@@ -173,12 +174,14 @@ def LSTM(input_dim, output_dim):
 
     return model
 
-def train_LSTM(data, input_dim, specification_set, plot=False):
+def train_LSTM(data, specification_set, plot=False):
     
     reframed = series_to_supervised(data, config.sequence_length, 1)
-    # Drop the Returns column (1st)
-    reframed.drop(reframed.columns[input_dim:], axis=1, inplace=True)
-    
+
+    # Keep the t-1 columns for all four features, drop the t columns for 
+    # the features to be predicted (all except FEDFUNDS)
+    reframed.drop(reframed.columns[data.shape[1]+1:], axis=1, inplace=True)
+
     # Split into train and test sets (80-20)
     train_split = config.train_split
     val_split = config.val_split
@@ -188,18 +191,16 @@ def train_LSTM(data, input_dim, specification_set, plot=False):
     validation = values[int(len(values)*train_split):int(len(values)*val_split), :] 
     
     # Split into input and outputs    
-    train_input, train_output = train[:, :], train[:, 1:]
-    val_input, val_output = validation[:, :], validation[:, 1:]
-    
+    train_input, train_output = train[:, :-1], train[:, 1:-1]
+    val_input, val_output = validation[:, :-1], validation[:, 1:-1]
+
     # Reshape input to be 3D [samples, timesteps, features]
     train_input = train_input.reshape((train_input.shape[0], config.sequence_length, train_input.shape[1]))
     val_input = val_input.reshape((val_input.shape[0], config.sequence_length, val_input.shape[1]))
     #print(train_input.shape, train_output.shape, val_input.shape, val_output.shape)
-    print(train_input.shape, train_output.shape, val_input.shape, val_output.shape)
+
     # Read model
-    config.input_dim = data.shape[1]
-    config.output_dim = data.shape[1] - 1
-    model = LSTM(config.input_dim, config.output_dim)
+    model = LSTM(train_input.shape[-1], train_output.shape[-1])
     
     # Stop training when a monitored quantity has stopped improving for 3 consecutive epochs.
     callbacks = tf.keras.callbacks.EarlyStopping(
@@ -239,10 +240,12 @@ def linearModels(data, specification_set, algorithm="LR"):
     
     # Split into train and test sets (80-20)
     train_split = config.train_split
-    data['Time'] = np.arange(0, len(data))
+    #df = data.copy()
+    #df['Time'] = np.arange(0, len(data))
+    #df.loc[:, ['FEDFUNDS']+[col for col in data.columns]]
 
-    values = pd.DataFrame(data).values
-    train = values[:int(len(values)*train_split), :].real
+    values = data.values
+    train = values[:int(len(values)*train_split), :]
 
     # Split into input and outputs
     train_input, train_output = train[:, :], train[:, 1:]
@@ -266,7 +269,7 @@ def gaussianProcess(data):
     train = values[:int(len(values)*train_split), :]
 
     # Split into input and outputs
-    train_input, train_output = train[:, 1:], train[:, 0]
+    train_input, train_output = train[:, :], train[:, 1:]
 
     # Fit model
     model.fit(train_input, train_output)
@@ -315,7 +318,7 @@ def ensembleModels(data, specification_set, algorithm="RF"):
     train = values[:int(len(values)*train_split), :]
 
     # Split into input and outputs
-    train_input, train_output = train[:, 1:], train[:, 0]
+    train_input, train_output = train[:, :], train[:, 1:]
 
     # Fit model
     model.fit(train_input, train_output)
