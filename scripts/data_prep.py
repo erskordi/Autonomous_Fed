@@ -87,27 +87,27 @@ class DataPrep:
     
     def read_data(self, specifications_set, read_only: bool = False):
         # Read data
-        if specifications_set == 0:
+        if specifications_set == 'A':
             column_names = ['FEDFUNDS',
                             'Inflation_1',
-                            'Inflation_residuals',
-                            'Output_GAP'
+                            'Output_GAP',
+                            'Natural_Rate_of_Interest',
                         ]
 
             df = pd.read_excel(self.config.path_to_data,
                             sheet_name="FRED Graph",
                             skiprows=range(9),
                             names=column_names,
-                            usecols='D,B,H,E',
+                            usecols='C,B,D,K',
                             skipfooter=21
                             )
 
             df.dropna(inplace=True)
             df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
             df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x)/100)
-            df["Inflation_residuals"] = df["Inflation_residuals"].map(lambda x: (1+x)/100)
             df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1+x)/100)
-        elif specifications_set == 1:
+            df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
+        elif specifications_set == 'B':
             column_names = ['FEDFUNDS',
                             'CPI_Inflation',
                             'Output_GAP'
@@ -125,43 +125,31 @@ class DataPrep:
             df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
             df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x)/100)
             df["CPI_Inflation"] = df["CPI_Inflation"].map(lambda x: (1+x)/100)
-        elif specifications_set == 2:
+        elif specifications_set == 'C':
             column_names = ['FEDFUNDS',
                             'log_GDP',
                             'log_potential_GDP',
-                            'log_CPI'
+                            'log_CPI',
+                            'Natural_Rate_of_Interest',
                         ]
 
             df = pd.read_excel(self.config.path_to_data,
                             sheet_name="FRED Graph",
                             skiprows=range(9),
                             names=column_names,
-                            usecols='D,L:N',
+                            usecols='C,H:J,K',
                             skipfooter=21
                             )
 
             df.dropna(inplace=True)
+            """
             df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
             df["log_GDP"] = df["log_GDP"].map(lambda x: (1+x)/100)
             df["log_potential_GDP"] = df["log_potential_GDP"].map(lambda x: (1+x)/100)
             df["log_CPI"] = df["log_CPI"].map(lambda x: (1+x)/100)
-        
-        if read_only:
-            from ray.data.preprocessors import MinMaxScaler
-
-            def scaling(columns: list):
-                return MinMaxScaler(
-                    columns=columns
-                )
-
-            df.rename(columns=self.col_names(), inplace=True)
-            train_dataset = ray.data.from_pandas(df)
-            preprocessor = scaling(columns=self.col_names().values())
-            df = preprocessor.fit_transform(train_dataset).to_pandas()
-            
-
-            return df
-        else:
+            df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
+            """
+        if specifications_set == 'C':
             from sklearn.preprocessing import MinMaxScaler
 
             input_data = df.values
@@ -182,6 +170,8 @@ class DataPrep:
 if __name__ == "__main__":
     
     data_prep = DataPrep()
-    df = data_prep.read_data()
+    specifications_set = input("Choose specifications set: {A, B, C}: ")
+    df = data_prep.read_data(specifications_set=specifications_set)
     print(df.head())
+    print(df.shape)
 
