@@ -52,9 +52,12 @@ if __name__ == "__main__":
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, save_weights_only=True,verbose=1)
 
     config = Config()
+    data_prep = DataPrep()
 
-    specifications_set = int(input("Choose specifications set (0, 1, 2): "))
-    df = DataPrep().read_data(specifications_set=specifications_set)
+    specifications_set = input("Choose specifications set: {0, 1, 2, 3, A, B, C}: ")
+    if specifications_set.isdigit():
+        specifications_set = int(specifications_set)
+    df = data_prep.read_data(specifications_set=specifications_set)
 
     # Build encoder
     latent_dim = config.latent_dim
