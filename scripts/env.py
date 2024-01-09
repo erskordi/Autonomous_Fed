@@ -138,19 +138,19 @@ class AutonomousFed(gymnasium.Env):
             if self.config['action_specifications'] == 'ir_omega_equals' or \
             self.config['action_specifications'] == 'ir_omega_not_equals':
                 reward = self._reward(
-                    obs, 
+                    inv_obs[0][1:], 
                     self.omega_pi, 
                     self.omega_psi
                     )
             elif self.config['action_specifications'] == 'ir_omega_pi_action':
                 reward = self._reward(
-                    obs, 
+                    inv_obs[0][1:], 
                     self.omega_pi, 
                     action['omega_psi'][0]
                     )
             else:
                 reward = self._reward(
-                    obs, 
+                    inv_obs[0][1:], 
                     action['omega_pi'][0], 
                     action['omega_psi'][0] 
                     )
