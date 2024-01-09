@@ -57,7 +57,7 @@ if __name__ == "__main__":
     specifications_set = input("Choose specifications set: {0, 1, 2, 3, A, B, C}: ")
     if specifications_set.isdigit():
         specifications_set = int(specifications_set)
-    df = data_prep.read_data(specifications_set=specifications_set)
+    df, _ = data_prep.read_data(specifications_set=specifications_set)
 
     # Build encoder
     latent_dim = config.latent_dim
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_" + str(i))(x)
         else:
             x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_final")(x)
-
+        tf.keras.layers.Dropout(0.2)
     x_mean = tf.keras.layers.Dense(config.latent_dim, name="x_mean")(x)#, activation='sigmoid'
     x_logvar = tf.keras.layers.Dense(config.latent_dim, name="x_logvar")(x)
     
@@ -92,6 +92,7 @@ if __name__ == "__main__":
             x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="latent_layer")(x)
         else:
             x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_" + str(i))(x)
+        tf.keras.layers.Dropout(0.2)
     decoder_outputs = tf.keras.layers.Dense(df.shape[1]-1, activation="sigmoid", name="decoder_output")(x)
 
     decoder = tf.keras.Model(latent_inputs, decoder_outputs, name="decoder")
@@ -106,14 +107,15 @@ if __name__ == "__main__":
 
     # Stop training when a monitored quantity has stopped improving for 3 consecutive epochs.
     callbacks = tf.keras.callbacks.EarlyStopping(
-        monitor='val_loss', patience=10, restore_best_weights=True, start_from_epoch=100)
+        monitor='loss', patience=10, restore_best_weights=True) #, start_from_epoch=100
     
     # Train VAE
     x_train = df.values
-    vae.compile(optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=0.0005), loss=loss_func(x_mean, x_logvar))
-    vae.fit(x_train[:-1,:], x_train[1:,1:],\
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=0.0005)
+    vae.compile(optimizer=optimizer, loss=loss_func(x_mean, x_logvar))
+    vae.fit(x_train[:-1,:], x_train[1:,1:],  
         epochs=config.epochs,
-        batch_size=config.batch_size//2, 
+        batch_size=config.batch_size, 
         callbacks=[cp_callback, callbacks]
     )
     

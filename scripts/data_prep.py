@@ -91,22 +91,24 @@ class DataPrep:
             column_names = ['FEDFUNDS',
                             'Inflation_1',
                             'Output_GAP',
-                            'Natural_Rate_of_Interest',
+                            #'Natural_Rate_of_Interest',
                         ]
 
             df = pd.read_excel(self.config.path_to_data,
                             sheet_name="FRED Graph",
                             skiprows=range(9),
                             names=column_names,
-                            usecols='C,B,D,K',
+                            usecols='C,B,D', #,N
                             skipfooter=21
                             )
 
             df.dropna(inplace=True)
-            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
-            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x)/100)
-            df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1+x)/100)
-            df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
+            """"""
+            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x/100))
+            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x/100))
+            df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1+x/100))
+            #df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x/100))
+            
         elif specifications_set == 'B':
             column_names = ['FEDFUNDS',
                             'CPI_Inflation',
@@ -130,14 +132,14 @@ class DataPrep:
                             'log_GDP',
                             'log_potential_GDP',
                             'log_CPI',
-                            'Natural_Rate_of_Interest',
+                            #'Natural_Rate_of_Interest',
                         ]
 
             df = pd.read_excel(self.config.path_to_data,
                             sheet_name="FRED Graph",
                             skiprows=range(9),
                             names=column_names,
-                            usecols='C,H:J,K',
+                            usecols='C,I:K', #,N
                             skipfooter=21
                             )
 
@@ -149,7 +151,8 @@ class DataPrep:
             df["log_CPI"] = df["log_CPI"].map(lambda x: (1+x)/100)
             df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
             """
-        if specifications_set == 'C':
+        
+        if specifications_set in ['A', 'C']:
             from sklearn.preprocessing import MinMaxScaler
 
             input_data = df.values
@@ -157,9 +160,9 @@ class DataPrep:
             normalized_input_data = scaler.fit_transform(input_data)
             df = pd.DataFrame(normalized_input_data, columns=column_names)
 
-            return df
+            #return df
         """"""
-        return df
+        return df, scaler
     
     def inverse_transform(self, data):
         from sklearn.preprocessing import MinMaxScaler
@@ -171,7 +174,9 @@ if __name__ == "__main__":
     
     data_prep = DataPrep()
     specifications_set = input("Choose specifications set: {A, B, C}: ")
-    df = data_prep.read_data(specifications_set=specifications_set)
+    df, scaler = data_prep.read_data(specifications_set=specifications_set)
     print(df.head())
     print(df.shape)
+    plt.plot(df)
+    plt.show()
 

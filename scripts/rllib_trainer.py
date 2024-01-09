@@ -56,6 +56,24 @@ parser.add_argument(
     help="Run without Tune using a manual train loop instead. In this case,"
     "use PPO without grid search and no TensorBoard.",
 )
+parser.add_argument(
+    "--omega_pi",
+    type=float,
+    default=0.5,
+    help="Weight for the inflation loss.",
+)
+parser.add_argument(
+    "--omega_psi",
+    type=float,
+    default=0.5,
+    help="Weight for the output gap loss.",
+)
+parser.add_argument(
+    "--action_specifications",
+    type=str,
+    default='ir_omega_equals',
+    help="Action specifications for the environment; list of values: 1. ir_omega_equals, 2. ir_omega_not_equals, 3. ir_omega_pi_action, 4. ir_omega_all.",
+)
 
 args = parser.parse_args()
 
@@ -77,13 +95,17 @@ path = [encoder_path, decoder_path]
 #TF_VAE_Model.deploy(path)
 serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
+df, scaler = DataPrep().read_data(specifications_set=specifications_set)
+
 env_config = {'start_date': '2021-07-01', 
               'end_date': '2050-12-31', 
               'model_type': 'VAE',
-              'a_pi': 0.5,
-              'a_psi': 0.5,
+              'action_specifications': args.action_specifications,
+              'omega_pi': args.omega_pi,
+              'omega_psi': args.omega_psi,
               'specifications_set': specifications_set,
-              'df': DataPrep().read_data(specifications_set=specifications_set),
+              'df': df,
+              'scaler': scaler,
               'model_config': Config()}
 
 env_name = "AutonomousFed"

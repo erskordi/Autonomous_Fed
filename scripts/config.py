@@ -6,7 +6,7 @@ class Config(object):
         self.input_shape = (self.input_dim,)
         self.intermediate_dim = 16
         self.latent_dim = 2
-        self.batch_size = 64
+        self.batch_size = 32
         self.epochs = 1000
         self.dense_neurons = [256, 256, 128, 64, 32]
 
