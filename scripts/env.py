@@ -198,7 +198,7 @@ class AutonomousFed(gymnasium.Env):
         - Desired inflation = 0.02
         """
         # 
-        desired_inflation = 0.02
+        desired_inflation = 1.02
         if self.specifications_set == 'A':
             output_gap = obs[1]
             inflation_diff = obs[0] - desired_inflation
