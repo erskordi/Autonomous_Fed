@@ -28,6 +28,7 @@ class AutonomousFed(gymnasium.Env):
         self.model_config = config['model_config']
         self.df = config['df']
         self.scaler = config['scaler']
+        self.columns = self.df.columns
         self.original_df = self.df.copy()
 
         self.model_type = config['model_type']
@@ -51,22 +52,25 @@ class AutonomousFed(gymnasium.Env):
 
         self.prev_states = []
 
+        low = 0
+        high = 30
+
         if self.config['action_specifications'] == 'ir_omega_equals':
-            self.action_space = spaces.Box(low=0, high=10, shape=(1,), dtype=np.float32)
+            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
         elif self.config['action_specifications'] == 'ir_omega_not_equals':
-            self.action_space = spaces.Box(low=0, high=10, shape=(1,), dtype=np.float32)
+            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
         elif self.config['action_specifications'] == 'ir_omega_pi_action':
             self.action_space = spaces.Dict({
-                "interest_rate":spaces.Box(low=0, high=10, shape=(1,), dtype=np.float32),
+                "interest_rate":spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32),
                 "omega_psi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             })
         else:
             self.action_space = spaces.Dict({
-                "interest_rate":spaces.Box(low=0, high=10, shape=(1,), dtype=np.float32),
+                "interest_rate":spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32),
                 "omega_pi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
                 "omega_psi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             })
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.df.shape[1]-1,), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=2, shape=(self.df.shape[1]-1,), dtype=np.float32)
     
     def dates(self):
         for date in self.quarterly_dates:
@@ -134,23 +138,24 @@ class AutonomousFed(gymnasium.Env):
 
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
-            inv_obs = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1,-1))
+            #df_copy = pd.DataFrame(self.scaler.inverse_transform(self.df), columns=self.columns)
+            #obs = np.array(df_copy.iloc[len(df_copy)-1, 1:], dtype=np.float32)
             if self.config['action_specifications'] == 'ir_omega_equals' or \
             self.config['action_specifications'] == 'ir_omega_not_equals':
                 reward = self._reward(
-                    inv_obs[0][1:], 
+                    obs,
                     self.omega_pi, 
                     self.omega_psi
                     )
             elif self.config['action_specifications'] == 'ir_omega_pi_action':
                 reward = self._reward(
-                    inv_obs[0][1:], 
+                    obs, 
                     self.omega_pi, 
                     action['omega_psi'][0]
                     )
             else:
                 reward = self._reward(
-                    inv_obs[0][1:], 
+                    obs, 
                     action['omega_pi'][0], 
                     action['omega_psi'][0] 
                     )
@@ -198,10 +203,10 @@ class AutonomousFed(gymnasium.Env):
         - Desired inflation = 0.02
         """
         # 
-        desired_inflation = 1.02
+        desired_inflation = 0.17#1.02
         if self.specifications_set == 'A':
             output_gap = obs[1]
-            inflation_diff = obs[0] - desired_inflation
+            inflation_diff = abs(obs[0] - desired_inflation)
             reward = - (a_pi * (inflation_diff ** 2) + a_psi * (output_gap ** 2))# + obs[2]
         elif self.specifications_set == 'C':
             output_gap = np.exp(obs[0] - obs[1])
