@@ -41,7 +41,7 @@ parser.add_argument(
     "be achieved within --stop-timesteps AND --stop-iters.",
 )
 parser.add_argument(
-    "--stop-iters", type=int, default=50, help="Number of iterations to train."
+    "--stop-iters", type=int, default=1000, help="Number of iterations to train."
 )
 parser.add_argument(
     "--stop-timesteps", type=int, default=100000, help="Number of timesteps to train."
@@ -57,19 +57,19 @@ parser.add_argument(
     "use PPO without grid search and no TensorBoard.",
 )
 parser.add_argument(
-    "--omega_pi",
+    "--omega-pi",
     type=float,
     default=0.5,
     help="Weight for the inflation loss.",
 )
 parser.add_argument(
-    "--omega_psi",
+    "--omega-psi",
     type=float,
     default=0.5,
     help="Weight for the output gap loss.",
 )
 parser.add_argument(
-    "--action_specifications",
+    "--action-specifications",
     type=str,
     default='ir_omega_equals',
     help="Action specifications for the environment; list of values: 1. ir_omega_equals, 2. ir_omega_not_equals, 3. ir_omega_pi_action, 4. ir_omega_all.",
@@ -119,8 +119,8 @@ config = (
 
 stop = {
         "training_iteration": args.stop_iters,
-        "timesteps_total": args.stop_timesteps,
-        "episode_reward_mean": args.stop_reward,
+        #"timesteps_total": args.stop_timesteps,
+        #"episode_reward_mean": args.stop_reward,
     }
 
 if args.no_tune:
