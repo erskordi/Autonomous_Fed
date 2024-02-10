@@ -47,7 +47,7 @@ parser.add_argument(
     "--stop-timesteps", type=int, default=100000, help="Number of timesteps to train."
 )
 parser.add_argument(
-    "--stop-reward", type=float, default=0.1, help="Reward at which we stop training."
+    "--stop-reward", type=float, default=0.0, help="Reward at which we stop training."
 )
 parser.add_argument(
     "--no-tune",
@@ -120,7 +120,7 @@ config = (
 stop = {
         "training_iteration": args.stop_iters,
         #"timesteps_total": args.stop_timesteps,
-        #"episode_reward_mean": args.stop_reward,
+        "episode_reward_mean": args.stop_reward,
     }
 
 if args.no_tune:
@@ -132,14 +132,16 @@ if args.no_tune:
     config.lr = 1e-3
     algo = config.build()
     # run manual training loop and print results after each iteration
-    for _ in range(args.stop_iters):
+    for itr in range(args.stop_iters):
         result = algo.train()
-        # stop training of the target train steps or reward are reached
-        if (
-            result["timesteps_total"] >= args.stop_timesteps
-            or result["episode_reward_mean"] >= args.stop_reward
-        ):
-            break
+        if itr % 10 == 0:
+            save_result = algo.save()
+            print(save_result)
+            path_to_checkpoint = save_result.checkpoint.path
+            print(
+                "An Algorithm checkpoint has been created inside directory: "
+                f"'{path_to_checkpoint}'."
+            )
     algo.stop()
 else:
     # automated run with Tune and grid search and TensorBoard

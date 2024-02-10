@@ -166,21 +166,21 @@ class AutonomousFed(gymnasium.Env):
                     obs, 
                     self.omega_pi, 
                     self.omega_psi, 
-                    self.df.iloc[len(self.df)-5, 3]
+                    self.df.iloc[len(self.df)-4, 3]
                     )
             elif self.config['action_specifications'] == 'ir_omega_pi_action':
                 reward = self._reward(
                     obs, 
                     self.omega_pi, 
                     action['omega_psi'][0], 
-                    self.df.iloc[len(self.df)-5, 3]
+                    self.df.iloc[len(self.df)-4, 3]
                     )
             else:
                 reward = self._reward(
                     obs, 
                     action['omega_pi'][0], 
                     action['omega_psi'][0], 
-                    self.df.iloc[len(self.df)-5, 3]
+                    self.df.iloc[len(self.df)-4, 3]
                     )
         terminated = False
         truncated = {}
@@ -209,8 +209,8 @@ class AutonomousFed(gymnasium.Env):
             inflation_diff = abs(obs[0] - desired_inflation)
             reward = - (a_pi * (inflation_diff ** 2) + a_psi * (output_gap ** 2))# + obs[2]
         elif self.specifications_set == 'C':
-            output_gap = np.exp(obs[0] - obs[1])
-            cpi_inflation_diff = np.exp(obs[2] - cpi_t_minus_four)
+            output_gap = np.exp(abs(obs[0] - obs[1]))
+            cpi_inflation_diff = np.exp(abs(obs[2] - cpi_t_minus_four))
             reward = - (a_pi * (cpi_inflation_diff ** 2) + a_psi * (output_gap** 2))# + obs[3]
 
         return reward
