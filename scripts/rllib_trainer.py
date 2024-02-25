@@ -87,8 +87,8 @@ specifications_set = input("Choose specifications set: {A, B, C}: ")
 serve.start()
 
 # Load the models based on the specifications set
-encoder_path = os.path.join('/Users/erotokritosskordilis/git-repos/Autonomous_Fed/saved_models/',f'encoder_FedModel_{specifications_set}.keras')
-decoder_path = os.path.join('/Users/erotokritosskordilis/git-repos/Autonomous_Fed/saved_models/',f'decoder_FedModel_{specifications_set}.keras')
+encoder_path = os.path.join('../saved_models/',f'encoder_FedModel_{specifications_set}.keras')
+decoder_path = os.path.join('../saved_models/',f'decoder_FedModel_{specifications_set}.keras')
 path = [encoder_path, decoder_path]
 
 # Deploy the models
@@ -114,7 +114,7 @@ register_env(env_name, lambda config: AutonomousFed(env_config))
 config = (
     PPOConfig().framework(args.framework).\
     environment(env_name, disable_env_checking=True).\
-    training(kl_coeff=0.0)
+    training(kl_coeff=0.0).resources(num_gpus=1)
 )
 
 stop = {
@@ -122,6 +122,8 @@ stop = {
         #"timesteps_total": args.stop_timesteps,
         "episode_reward_mean": args.stop_reward,
     }
+
+checkpoint_config=air.CheckpointConfig(checkpoint_frequency=10)
 
 if args.no_tune:
     # manual training with train loop using PPO and fixed learning rate
@@ -149,6 +151,6 @@ else:
     tuner = tune.tuner.Tuner(
         args.run,
         param_space=config.to_dict(),
-        run_config=air.RunConfig(stop=stop),
+        run_config=air.RunConfig(stop=stop, checkpoint_config=checkpoint_config),
     )
     results = tuner.fit()
