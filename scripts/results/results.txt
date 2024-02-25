@@ -1,0 +1,12 @@
+No Tune:
+ir_omega_equals '/tmp/tmphjg09rqm'
+ir_omega_not_equals '/tmp/tmp85zywa5g'
+ir_omega_pi_action '/tmp/tmpe89gb85d'
+ir_omega_all_actions '/tmp/tmpktn8apsc'
+
+
+Tune:
+ir_omega_equals  path=/home/erskordi/ray_results/PPO_2024-02-12_19-48-07/PPO_AutonomousFed_8deb9_00000_0_2024-02-12_19-48-08/checkpoint_000009
+ir_omega_not_equals path=/home/erskordi/ray_results/PPO_2024-02-13_12-18-09/PPO_AutonomousFed_dc6f0_00000_0_2024-02-13_12-18-10/checkpoint_000009
+ir_omega_pi_action path=/home/erskordi/ray_results/PPO_2024-02-13_14-55-49/PPO_AutonomousFed_e300e_00000_0_2024-02-13_14-55-50/checkpoint_000009
+ir_omega_all_actions  path=/home/erskordi/ray_results/PPO_2024-02-13_21-42-51/PPO_AutonomousFed_bf232_00000_0_2024-02-13_21-42-51/checkpoint_000009
