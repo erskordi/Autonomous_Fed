@@ -3,6 +3,7 @@ import numpy as np
 import os
 import pandas as pd
 import pprint
+import torch
 import yaml
 from datetime import timedelta
 
@@ -21,17 +22,21 @@ from sim import TF_VAE_Model
 tf1, tf, tfv = try_import_tf()
 
 RAY_PICKLE_VERBOSE_DEBUG=1
+os.environ['PYTHONWARNINGS'] = "ignore::DeprecationWarning"
+os.environ['RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S'] = '3'
+
+torch.cuda.empty_cache()
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--n_cpus", type=int, default=4)
+parser.add_argument("--n_cpus", type=int, default=8)
 parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
 )
 parser.add_argument(
     "--framework",
     choices=["tf", "tf2", "torch"],
-    default="tf2",
+    default="torch",
     help="The DL framework specifier.",
 )
 parser.add_argument(
@@ -97,7 +102,7 @@ serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
 df, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
-env_config = {'start_date': '2021-07-01', 
+env_config = {'start_date': '2021-10-01', 
               'end_date': '2050-12-31', 
               'model_type': 'VAE',
               'action_specifications': args.action_specifications,
@@ -152,5 +157,6 @@ else:
         args.run,
         param_space=config.to_dict(),
         run_config=air.RunConfig(stop=stop, checkpoint_config=checkpoint_config),
+        tune_config=tune.TuneConfig(reuse_actors=True),
     )
     results = tuner.fit()

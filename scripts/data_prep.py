@@ -87,6 +87,8 @@ class DataPrep:
     
     def read_data(self, specifications_set, read_only: bool = False):
         # Read data
+        scaler = None
+
         if specifications_set == 'A':
             column_names = ['FEDFUNDS',
                             'Inflation_1',
@@ -99,14 +101,15 @@ class DataPrep:
                             skiprows=range(9),
                             names=column_names,
                             usecols='C,B,D', #,N
-                            skipfooter=21
+                            #skipfooter=21
                             )
 
             df.dropna(inplace=True)
+            #print(df.reset_index(drop=True))
             """"""
-            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x/100))
-            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1+x/100))
-            df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1+x/100))
+            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1/(1 + np.exp(-x))))
+            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1/(1 + np.exp(-x))))
+            df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1/(1 + np.exp(-x))))                                                                   
             #df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x/100))
             
         elif specifications_set == 'B':
@@ -152,10 +155,10 @@ class DataPrep:
             df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
             """
         
-        if specifications_set in ['A', 'C']:
+        if specifications_set not in ['A', 'C']:
             from sklearn.preprocessing import MinMaxScaler
 
-            input_data = df.values
+            input_data = df
             scaler = MinMaxScaler(feature_range=(0, 1))
             normalized_input_data = scaler.fit_transform(input_data)
             df = pd.DataFrame(normalized_input_data, columns=column_names)
@@ -171,12 +174,19 @@ class DataPrep:
         return scaler.inverse_transform(data)
 
 if __name__ == "__main__":
-    
+    epsilon = 1e-10
     data_prep = DataPrep()
     specifications_set = input("Choose specifications set: {A, B, C}: ")
     df, scaler = data_prep.read_data(specifications_set=specifications_set)
-    print(df.head())
-    print(df.shape)
+    df.reset_index(drop=True, inplace=True)
+    print(df)
+    #print(df.shape)
+    df_copy = df.copy()
+    df_copy.reset_index(drop=True, inplace=True)
+    df_copy['FEDFUNDS'] = df_copy['FEDFUNDS'].map(lambda p: np.log((p + epsilon)/(1-p + epsilon)))
+    df_copy['Inflation_1'] = df_copy['Inflation_1'].map(lambda p: np.log((p + epsilon)/(1-p + epsilon)))
+    df_copy['Output_GAP'] = df_copy['Output_GAP'].map(lambda p: np.log((p + epsilon)/(1-p + epsilon)))
+    print(df_copy)  
     plt.plot(df)
     plt.show()
 

@@ -58,7 +58,7 @@ if __name__ == "__main__":
     if specifications_set.isdigit():
         specifications_set = int(specifications_set)
     df, _ = data_prep.read_data(specifications_set=specifications_set)
-
+    print(df.head())
     # Build encoder
     latent_dim = config.latent_dim
 
@@ -121,7 +121,9 @@ if __name__ == "__main__":
     
 
     # Save models (decoder and/or encoder)
-
+    if not os.path.exists('../saved_models'):
+        os.makedirs('../saved_models')
+    
     encoder.save(f'../saved_models/encoder_FedModel_{specifications_set}.keras')
     decoder.save(f'../saved_models/decoder_FedModel_{specifications_set}.keras')
 
