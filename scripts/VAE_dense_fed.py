@@ -58,6 +58,7 @@ if __name__ == "__main__":
     if specifications_set.isdigit():
         specifications_set = int(specifications_set)
     df, _ = data_prep.read_data(specifications_set=specifications_set)
+    df.reset_index(drop=True, inplace=True)
     print(df.head())
     # Build encoder
     latent_dim = config.latent_dim
