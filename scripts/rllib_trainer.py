@@ -9,10 +9,13 @@ from datetime import timedelta
 
 import ray
 from ray import tune, serve, air
+from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.ddpg import DDPGConfig
-from ray.rllib.utils.framework import try_import_tf
+from ray.rllib.utils.framework import try_import_tf, try_import_torch
+from ray.util.placement_group import placement_group
+from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
 from config import Config
 from env import AutonomousFed
@@ -20,6 +23,7 @@ from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
 from sim import TF_VAE_Model
 
 tf1, tf, tfv = try_import_tf()
+torch, _ = try_import_torch()
 
 RAY_PICKLE_VERBOSE_DEBUG=1
 os.environ['PYTHONWARNINGS'] = "ignore::DeprecationWarning"
@@ -27,9 +31,11 @@ os.environ['RAY_SERVE_QUEUE_LENGTH_RESPONSE_DEADLINE_S'] = '3'
 
 torch.cuda.empty_cache()
 
+cpu_count = os.cpu_count()
+
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--n_cpus", type=int, default=8)
+parser.add_argument("--n-cpus", type=int, default=cpu_count, help="Number of CPUs to use.")
 parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
 )
@@ -74,20 +80,51 @@ parser.add_argument(
     help="Weight for the output gap loss.",
 )
 parser.add_argument(
+    "--normalization-scheme",
+    type=str,
+    default='minmax',
+    help="Normalization scheme for the data; list of values: 1. minmax, 2. sigmoid.",
+)
+parser.add_argument(
     "--action-specifications",
     type=str,
     default='ir_omega_equals',
     help="Action specifications for the environment; list of values: 1. ir_omega_equals, 2. ir_omega_not_equals, 3. ir_omega_pi_action, 4. ir_omega_all.",
 )
+parser.add_argument(
+    "--use-penalty",
+    type=bool,
+    default=False,
+    help="Use penalty for regularizing reward function.",
+)
+parser.add_argument(
+    "--n-gpus", type=float, default=1.0, help="Number of GPUs to use."
+)
 
 args = parser.parse_args()
 
+
 if ray.is_initialized():
-    ray.shutdown()
+    ray.shutdown(shutdown_at_exit=True)
 
-ray.init(num_cpus=args.n_cpus)
 
-specifications_set = input("Choose specifications set: {A, B, C}: ")
+cluster = Cluster(
+    initialize_head=False,
+    head_node_args={
+        'num_cpus': args.n_cpus,
+        'num_gpus': args.n_gpus
+    },
+)
+cluster.shutdown()
+
+ray.init(
+    #address = cluster.address,
+    num_cpus=args.n_cpus,
+    num_gpus=args.n_gpus,
+    resources = {'special_hardware': 1}
+)
+
+specifications_set = input("Choose specifications set: {A, B, C}: ").upper()
 # Initialize Ray Serve
 serve.start()
 
@@ -102,13 +139,15 @@ serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
 df, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
-env_config = {'start_date': '2021-10-01', 
-              'end_date': '2050-12-31', 
+env_config = {'start_date': '1954-07-01', 
+              'end_date': '2023-07-01', 
               'model_type': 'VAE',
               'action_specifications': args.action_specifications,
               'omega_pi': args.omega_pi,
               'omega_psi': args.omega_psi,
               'specifications_set': specifications_set,
+              'use_penalty': args.use_penalty,
+              'normalization_scheme': args.normalization_scheme,
               'df': df,
               'scaler': scaler,
               'model_config': Config()}
@@ -116,11 +155,20 @@ env_config = {'start_date': '2021-10-01',
 env_name = "AutonomousFed"
 register_env(env_name, lambda config: AutonomousFed(env_config))
 
-config = (
-    PPOConfig().framework(args.framework).\
-    environment(env_name, disable_env_checking=True).\
-    training(kl_coeff=0.0).resources(num_gpus=1)
-)
+config = PPOConfig()
+config.training(
+    kl_coeff=0.2,
+    model={
+        'fcnet_hiddens': [64, 32],
+        'fcnet_activation': 'relu',
+        'use_lstm': True,
+        'max_seq_len': 2,
+        'lstm_cell_size': 16,
+    })
+config = config.framework(args.framework)
+config = config.environment(env_name, disable_env_checking=True)
+config = config.resources(num_gpus=args.n_gpus)
+config = config.rollouts(num_rollout_workers=int(.75*(args.n_cpus)))
 
 stop = {
         "training_iteration": args.stop_iters,

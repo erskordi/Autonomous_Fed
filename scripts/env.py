@@ -42,7 +42,7 @@ class AutonomousFed(gymnasium.Env):
 
         # Create quarterly datetime range
         self.quarterly_dates = pd.date_range(start=self.start_date, end=self.end_date, freq='QS-JAN')
-
+        #print(f'Quarterly dates: {self.quarterly_dates}, len: {len(self.quarterly_dates)}')
         self.omega_pi = config['omega_pi']
         self.omega_psi = config['omega_psi']
 
@@ -53,12 +53,15 @@ class AutonomousFed(gymnasium.Env):
 
         self.specifications_set = config['specifications_set']
 
+        self.use_penalty = config['use_penalty']
+        self.normalization_scheme = config['normalization_scheme']
+
         self.prev_states = []
 
         self.epsilon = 1e-10
 
-        low = 0
-        high = 100
+        low = 0.0
+        high = 1.0
 
         if self.config['action_specifications'] == 'ir_omega_equals':
             self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float16)
@@ -91,14 +94,15 @@ class AutonomousFed(gymnasium.Env):
         # and return the initial observation
         """
         super().reset(seed=seed, options=options)
-        df_copy = self.df.copy()
-        #df_copy['FEDFUNDS'] = df_copy['FEDFUNDS'].map(lambda p: (np.where(p==1, self.epsilon, np.log((p + self.epsilon)/(1-p + self.epsilon)) / 100)))
-        df_copy['Inflation_1'] = df_copy['Inflation_1'].map(lambda p: np.log((p + self.epsilon)/(1-p + self.epsilon)))
-        df_copy['Output_GAP'] = df_copy['Output_GAP'].map(lambda p: np.log((p + self.epsilon)/(1-p + self.epsilon)))
-        obs = np.array(df_copy.iloc[len(df_copy)-1, 1:], dtype=np.float16)
-        
+        if self.normalization_scheme == 'minmax':
+            inv_data = self.scaler.inverse_transform(self.df)
+            obs = inv_data[0,1:]
+        else:
+            self.df['FEDFUNDS'] = self.df['FEDFUNDS'].map(lambda p: (np.where(p==1, self.epsilon, np.log((p + self.epsilon)/(1-p + self.epsilon)) / 100)))
+            self.df['Inflation_1'] = self.df['Inflation_1'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
+            self.df['Output_GAP'] = self.df['Output_GAP'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
 
-        return obs, {'2021-07-01': obs}#
+        return obs, {self.quarterly_dates[0]: obs}#
 
     def step(self, action):
         """
@@ -110,7 +114,7 @@ class AutonomousFed(gymnasium.Env):
         - truncated
         - info
         """
-
+        #print(f'Action: {action}, cntr: {AutonomousFed.cntr}')
         # Step 1: Action to list
         # If action is a dict, then it is a dict of the form {'interest_rate': 0.5, 'omega_pi': 0.5, 'omega_psi': 0.5}
         # Otherwise, it's only about the interest rate
@@ -121,7 +125,7 @@ class AutonomousFed(gymnasium.Env):
             action_ir = action['interest_rate'].tolist()
         
         # Step 2: Get previous state 
-        prev_state = self.df.iloc[len(self.df)-1,1:].values.tolist()
+        prev_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
        
         # Step 3: transform HTTP request -> tensorflow input
         obs = requests.get(
@@ -133,34 +137,42 @@ class AutonomousFed(gymnasium.Env):
         
         # Step 4: tensorflow input -> tensorflow output
         obs = obs.json()['prediction'][0]
-        
+        true_state = self.df.iloc[AutonomousFed.cntr+1,1:].values.tolist()
+
         # Add the new observation for t+1 to the dataframe
-        new_row = pd.DataFrame(np.array(action_ir+obs).reshape(1, self.df.shape[1]), columns=self.df.columns)
-        self.df = pd.concat([self.df, new_row], ignore_index=True)
+        inv_data = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
+        
         AutonomousFed.cntr += 1
 
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
-            df_copy = self.df.copy()
-            df_copy['Inflation_1'] = df_copy['Inflation_1'].map(lambda p: np.log((p + self.epsilon)/(1-p + self.epsilon)))
-            df_copy['Output_GAP'] = df_copy['Output_GAP'].map(lambda p: np.log((p + self.epsilon)/(1-p + self.epsilon)))
-            obs = np.array(df_copy.iloc[len(df_copy)-1, 1:], dtype=np.float16)
+            if self.normalization_scheme == 'minmax':
+                obs = inv_data[0,1:]
+            else:
+                df_preds = pd.DataFrame(inv_data, columns=self.df.columns)
+                df_preds['FEDFUNDS'] = df_preds['FEDFUNDS'].map(lambda p: (np.where(p==1, self.epsilon, np.log((p + self.epsilon)/(1-p + self.epsilon)) / 100)))
+                df_preds['Inflation_1'] = df_preds['Inflation_1'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
+                df_preds['Output_GAP'] = df_preds['Output_GAP'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
+            
             if self.config['action_specifications'] == 'ir_omega_equals' or \
             self.config['action_specifications'] == 'ir_omega_not_equals':
                 reward = self._reward(
                     obs,
+                    true_state,
                     self.omega_pi, 
                     self.omega_psi
                     )
             elif self.config['action_specifications'] == 'ir_omega_pi_action':
                 reward = self._reward(
                     obs, 
+                    true_state,
                     self.omega_pi, 
                     action['omega_psi'][0]
                     )
             else:
                 reward = self._reward(
                     obs, 
+                    true_state,
                     action['omega_pi'][0], 
                     action['omega_psi'][0]
                     )
@@ -189,17 +201,17 @@ class AutonomousFed(gymnasium.Env):
                     )
         terminated = False
         truncated = {}
-        info = {self.quarterly_dates[AutonomousFed.cntr-1]: obs}
+        info = {self.quarterly_dates[AutonomousFed.cntr]: obs}
 
         # Step 6: Set terminated to True if cntr == len(self.quarterly_dates)
-        if AutonomousFed.cntr == len(self.quarterly_dates):
+        if AutonomousFed.cntr == len(self.quarterly_dates)-1:
             terminated = True
             AutonomousFed.cntr = 0
             self.prev_states = []
 
         return obs, reward, terminated, truncated, info
     
-    def _reward(self, obs, a_pi, a_psi, cpi_t_minus_four=None):
+    def _reward(self, obs, true_state, a_pi, a_psi, cpi_t_minus_four=None):
         """
         Reward defined using Taylor Rule for monetary policy:
 
@@ -210,16 +222,20 @@ class AutonomousFed(gymnasium.Env):
         
         - Desired inflation = 0.02
         """
-         
+        use_extra_penalty = False
         desired_inflation = 2 # 2% desired inflation
         if self.specifications_set == 'A':
             output_gap = obs[1]
             inflation_diff = abs(obs[0] - desired_inflation)
             r_pi = (inflation_diff ** 2)
             r_psi = (output_gap ** 2)
-            r_pi_penalty = 10 * r_pi if r_pi > 0.02 ** 2 else 0
-            r_psi_penalty = 10 * r_psi if r_psi > 0.02 ** 2 else 0
-            reward = - (a_pi * r_pi + a_psi * r_psi + r_pi_penalty + r_psi_penalty)
+            extra_penalty =  - (obs[0] - true_state[0]) ** 2 - (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
+            if self.use_penalty:
+                r_pi_penalty = 10 * r_pi if r_pi > desired_inflation ** 2 else 0
+                r_psi_penalty = 10 * r_psi if r_psi > desired_inflation ** 2 else 0
+                reward = - (a_pi * r_pi + a_psi * r_psi + r_pi_penalty + r_psi_penalty) - extra_penalty
+            else:
+                reward = - (a_pi * r_pi + a_psi * r_psi) - extra_penalty
         elif self.specifications_set == 'C':
             output_gap = np.exp(abs(obs[0] - obs[1]))
             cpi_inflation_diff = np.exp(abs(obs[2] - cpi_t_minus_four))
@@ -236,7 +252,7 @@ class AutonomousFed(gymnasium.Env):
 
 if __name__ == "__main__":
 
-    specifications_set = input("Choose specifications set: {A, B, C}: ")
+    specifications_set = input("Choose specifications set: {A, B, C}: ").upper()
     # Initialize Ray Serve
     serve.start()
 
@@ -247,18 +263,22 @@ if __name__ == "__main__":
 
     # Deploy the models
     serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
-    
 
-    config = {'start_date': '2021-07-01', 
-              'end_date': '2050-12-31', 
+    df, scaler = DataPrep().read_data(specifications_set=specifications_set)
+
+    config = {'start_date': '1954-07-01', 
+              'end_date': '2023-07-01', 
               'model_type': 'VAE',
               'action_specifications': 'ir_omega_equals',
               'omega_pi': 0.5,
               'omega_psi': 0.5,
               'specifications_set': specifications_set,
-              'scaler': None,
-              'df': DataPrep().read_data(specifications_set=specifications_set)[0],
+              'use_penalty': False,
+              'normalization_scheme': 'minmax',
+              'df': df,
+              'scaler': scaler,
               'model_config': Config()}
+
 
     episode_length = len(pd.date_range(start=config['start_date'], end=config['end_date'], freq='QS-JAN'))
 
@@ -272,9 +292,9 @@ if __name__ == "__main__":
     for _ in range(episode_length):
         action = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(action)
-        print(f'Action: {action}, Observation: {obs}, Reward: {reward}')
+        #print(f'Action: {action}, Observation: {obs}, Reward: {reward}')
         #print(f'Info:\n {info}')
-        print()
+        #print()
 
         if terminated or truncated:
             obs, info = env.reset()

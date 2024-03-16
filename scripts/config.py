@@ -11,7 +11,7 @@ class Config(object):
         self.dense_neurons = [256, 256, 128, 64, 32]
 
         # Split data
-        self.train_split = 0.8
+        self.train_split = 1.0
         self.val_split = self.train_split + .1 if self.train_split <= 0.9 else 0.0 # only for NNs
         self.test_split = 1 - self.train_split
 
@@ -22,7 +22,7 @@ class Config(object):
         self.b = 10
         self.size = 100
 
-        self.path_to_data = "/Users/erotokritosskordilis/Dropbox/ProvostAward2024/MonetaryPolicy_AI/Data_in_Levels.xlsx"
+        self.path_to_data = "/home/erskordi/projects/Autonomous_Fed/data/Data_in_Levels.xlsx"
 
         # suffixes
         self.suffix_prior = "_prior"

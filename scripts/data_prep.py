@@ -88,6 +88,7 @@ class DataPrep:
     def read_data(self, specifications_set, read_only: bool = False):
         # Read data
         scaler = None
+        specifications_set = specifications_set.upper()
 
         if specifications_set == 'A':
             column_names = ['FEDFUNDS',
@@ -107,9 +108,9 @@ class DataPrep:
             df.dropna(inplace=True)
             #print(df.reset_index(drop=True))
             """"""
-            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1/(1 + np.exp(-x))))
-            df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1/(1 + np.exp(-x))))
-            df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1/(1 + np.exp(-x))))                                                                   
+            #df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1/(1 + np.exp(-x))))
+            #df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1/(1 + np.exp(-x))))
+            #df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1/(1 + np.exp(-x))))                                                                   
             #df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x/100))
             
         elif specifications_set == 'B':
@@ -155,7 +156,7 @@ class DataPrep:
             df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
             """
         
-        if specifications_set not in ['A', 'C']:
+        if specifications_set in ['A', 'C']:
             from sklearn.preprocessing import MinMaxScaler
 
             input_data = df
