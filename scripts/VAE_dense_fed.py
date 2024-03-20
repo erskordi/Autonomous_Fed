@@ -14,6 +14,7 @@ from itertools import chain
 from config import Config
 from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
 
+
 def loss_func(encoder_mu, encoder_log_variance):
     def vae_reconstruction_loss(y_true, y_predict):
         reconstruction_loss = tf.reduce_mean(
@@ -68,11 +69,14 @@ if __name__ == "__main__":
 
     for i in range(len(config.dense_neurons)):
         if i == 0:
-            x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_" + str(i))(x)
+            x = tf.keras.layers.Dense(config.dense_neurons[i], name="dense_layer_" + str(i))(x)
+            x = tf.keras.layers.LeakyReLU(alpha=0.3)(x)
         elif (i > 0) & (i <= len(config.dense_neurons)):
-            x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_" + str(i))(x)
+            x = tf.keras.layers.Dense(config.dense_neurons[i], name="dense_layer_" + str(i))(x)
+            x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
         else:
-            x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_final")(x)
+            x = tf.keras.layers.Dense(config.dense_neurons[i], name="dense_layer_final")(x)
+            x = tf.keras.layers.LeakyReLU(alpha=0.1)(x)
         tf.keras.layers.Dropout(0.2)
     x_mean = tf.keras.layers.Dense(config.latent_dim, name="x_mean")(x)#, activation='sigmoid'
     x_logvar = tf.keras.layers.Dense(config.latent_dim, name="x_logvar")(x)
@@ -90,9 +94,11 @@ if __name__ == "__main__":
 
     for i in range(len(config.dense_neurons)-1,-1,-1):
         if i == len(config.dense_neurons) - 1:
-            x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="latent_layer")(x)
+            x = tf.keras.layers.Dense(config.dense_neurons[i], name="latent_layer")(x)
+            x = tf.keras.layers.LeakyReLU(alpha=0.1)(x)
         else:
-            x = tf.keras.layers.Dense(config.dense_neurons[i], activation='relu', name="dense_layer_" + str(i))(x)
+            x = tf.keras.layers.Dense(config.dense_neurons[i], name="dense_layer_" + str(i))(x)
+            x = tf.keras.layers.LeakyReLU(alpha=0.2)(x)
         tf.keras.layers.Dropout(0.2)
     decoder_outputs = tf.keras.layers.Dense(df.shape[1]-1, activation="sigmoid", name="decoder_output")(x)
 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
 
     # Stop training when a monitored quantity has stopped improving for 3 consecutive epochs.
     callbacks = tf.keras.callbacks.EarlyStopping(
-        monitor='loss', patience=10, restore_best_weights=True) #, start_from_epoch=100
+        monitor='loss', patience=100, restore_best_weights=True) #, start_from_epoch=100
     
     # Train VAE
     x_train = df.values
