@@ -13,6 +13,8 @@ from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.ddpg import DDPGConfig
+from ray.rllib.models import ModelCatalog
+from ray.rllib.models.tf.tf_modelv2 import TFModelV2
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.util.placement_group import placement_group
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
@@ -21,6 +23,8 @@ from config import Config
 from env import AutonomousFed
 from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
 from sim import TF_VAE_Model
+
+from policy_models import LinearPolicy, MLPModel, LSTMModel
 
 tf1, tf, tfv = try_import_tf()
 torch, _ = try_import_torch()
@@ -74,6 +78,12 @@ parser.add_argument(
     help="Weight for the inflation loss.",
 )
 parser.add_argument(
+    "--simulator",
+    type=str,
+    default="VAE",
+    help="Simulator type for the environment; list of values: 1. VAE, 2. Random Forest Regressor.",
+)
+parser.add_argument(
     "--omega-psi",
     type=float,
     default=0.5,
@@ -124,18 +134,24 @@ ray.init(
     resources = {'special_hardware': 1}
 )
 
+ModelCatalog.register_custom_model("linear_model", LinearPolicy)
+ModelCatalog.register_custom_model("mlp_model", MLPModel)
+ModelCatalog.register_custom_model("lstm_model", LSTMModel)
+
 specifications_set = input("Choose specifications set: {A, B, C}: ").upper()
-# Initialize Ray Serve
-serve.start()
 
-# Load the models based on the specifications set
-encoder_path = os.path.join('../saved_models/',f'encoder_FedModel_{specifications_set}.keras')
-decoder_path = os.path.join('../saved_models/',f'decoder_FedModel_{specifications_set}.keras')
-path = [encoder_path, decoder_path]
+if args.simulator == 'VAE':
+    # Initialize Ray Serve
+    serve.start()
 
-# Deploy the models
-#TF_VAE_Model.deploy(path)
-serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
+    # Load the models based on the specifications set
+    encoder_path = os.path.join('../saved_models/',f'encoder_FedModel_{specifications_set}.keras')
+    decoder_path = os.path.join('../saved_models/',f'decoder_FedModel_{specifications_set}.keras')
+    path = [encoder_path, decoder_path]
+
+    # Deploy the models
+    #TF_VAE_Model.deploy(path)
+    serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
 df, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
@@ -143,6 +159,7 @@ env_config = {'start_date': '1954-07-01',
               'end_date': '2023-07-01', 
               'model_type': 'VAE',
               'action_specifications': args.action_specifications,
+              'simulator': args.simulator, 
               'omega_pi': args.omega_pi,
               'omega_psi': args.omega_psi,
               'specifications_set': specifications_set,
@@ -158,13 +175,13 @@ register_env(env_name, lambda config: AutonomousFed(env_config))
 config = PPOConfig()
 config.training(
     kl_coeff=0.2,
+    lr=0.01,
+    grad_clip=0.01,
     model={
-        'fcnet_hiddens': [64, 32],
-        'fcnet_activation': 'relu',
-        'use_lstm': True,
-        'max_seq_len': 2,
-        'lstm_cell_size': 16,
-    })
+        "custom_model": "linear_model",
+        "custom_model_config": {},
+    },
+)
 config = config.framework(args.framework)
 config = config.environment(env_name, disable_env_checking=True)
 config = config.resources(num_gpus=args.n_gpus)

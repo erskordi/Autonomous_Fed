@@ -3,6 +3,7 @@ import math
 import numpy as np
 import os
 import pandas as pd
+import pickle
 import requests
 import tensorflow as tf
 
@@ -42,7 +43,7 @@ class AutonomousFed(gymnasium.Env):
 
         # Create quarterly datetime range
         self.quarterly_dates = pd.date_range(start=self.start_date, end=self.end_date, freq='QS-JAN')
-        #print(f'Quarterly dates: {self.quarterly_dates}, len: {len(self.quarterly_dates)}')
+        self.simulator = config['simulator']
         self.omega_pi = config['omega_pi']
         self.omega_psi = config['omega_psi']
 
@@ -50,6 +51,9 @@ class AutonomousFed(gymnasium.Env):
             f"Specifications set {config['specifications_set']},omega_pi = {self.omega_pi},\
             omega_psi = {self.omega_psi}"
         )
+
+        with open('../../Autonomous_Fed/saved_models/rf_regressor.pkl', 'rb') as f:
+            self.regr = pickle.load(f)
 
         self.specifications_set = config['specifications_set']
 
@@ -64,21 +68,21 @@ class AutonomousFed(gymnasium.Env):
         high = 1.0
 
         if self.config['action_specifications'] == 'ir_omega_equals':
-            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float16)
+            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
         elif self.config['action_specifications'] == 'ir_omega_not_equals':
-            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float16)
+            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
         elif self.config['action_specifications'] == 'ir_omega_pi_action':
             self.action_space = spaces.Dict({
-                "interest_rate":spaces.Box(low=low, high=high, shape=(1,), dtype=np.float16),
-                "omega_psi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float16),
+                "interest_rate":spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32),
+                "omega_psi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             })
         else:
             self.action_space = spaces.Dict({
-                "interest_rate":spaces.Box(low=low, high=high, shape=(1,), dtype=np.float16),
-                "omega_pi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float16),
-                "omega_psi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float16),
+                "interest_rate":spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32),
+                "omega_pi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
+                "omega_psi":spaces.Box(low=0, high=1, shape=(1,), dtype=np.float32),
             })
-        self.observation_space = spaces.Box(low=-100.0, high=100.0, shape=(2,), dtype=np.float16)
+        self.observation_space = spaces.Box(low=-100.0, high=100.0, shape=(2,), dtype=np.float32)
 
     def reset(self, *, seed=None, options=None):
         """
@@ -94,15 +98,19 @@ class AutonomousFed(gymnasium.Env):
         # and return the initial observation
         """
         super().reset(seed=seed, options=options)
+
+        # Reset the counter
+        AutonomousFed.cntr = 0#np.random.randint(0, len(self.quarterly_dates)-1)
+
         if self.normalization_scheme == 'minmax':
             inv_data = self.scaler.inverse_transform(self.df)
-            obs = inv_data[0,1:]
+            obs = inv_data[AutonomousFed.cntr,1:]
         else:
             self.df['FEDFUNDS'] = self.df['FEDFUNDS'].map(lambda p: (np.where(p==1, self.epsilon, np.log((p + self.epsilon)/(1-p + self.epsilon)) / 100)))
             self.df['Inflation_1'] = self.df['Inflation_1'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
             self.df['Output_GAP'] = self.df['Output_GAP'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
 
-        return obs, {self.quarterly_dates[0]: obs}#
+        return obs, {self.quarterly_dates[AutonomousFed.cntr]: obs}#
 
     def step(self, action):
         """
@@ -127,20 +135,27 @@ class AutonomousFed(gymnasium.Env):
         # Step 2: Get previous state 
         prev_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
        
-        # Step 3: transform HTTP request -> tensorflow input
-        obs = requests.get(
-                "http://localhost:8000/saved_models", 
-                 json={"array": 
-                         np.array(action_ir+prev_state).reshape(1,self.df.shape[1]).tolist()
-                    }
-            )
+        # Choose simulator based on config
+        if self.simulator == 'RF':
+            obs = self.regr.predict(np.array(action_ir+prev_state).reshape(1,self.df.shape[1]))[0]
+            # Add the new observation for t+1 to the dataframe
+            inv_data = self.scaler.inverse_transform(np.array([*action_ir, *obs]).reshape(1, self.df.shape[1]))
+        else:
+            # Step 3: transform HTTP request -> tensorflow input
+            obs = requests.get(
+                    "http://localhost:8000/saved_models", 
+                    json={"array": 
+                            np.array(action_ir+prev_state).reshape(1,self.df.shape[1]).tolist()
+                        }
+                )
         
-        # Step 4: tensorflow input -> tensorflow output
-        obs = obs.json()['prediction'][0]
-        true_state = self.df.iloc[AutonomousFed.cntr+1,1:].values.tolist()
+            # Step 4: tensorflow input -> tensorflow output
+            obs = obs.json()['prediction'][0]
+            # Add the new observation for t+1 to the dataframe
+            inv_data = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
 
-        # Add the new observation for t+1 to the dataframe
-        inv_data = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
+        # Recall true state (only used if we want to penalize deviation from true state in reward function)
+        true_state = self.df.iloc[AutonomousFed.cntr+1,1:].values.tolist()
         
         AutonomousFed.cntr += 1
 
@@ -229,7 +244,7 @@ class AutonomousFed(gymnasium.Env):
             inflation_diff = abs(obs[0] - desired_inflation)
             r_pi = (inflation_diff ** 2)
             r_psi = (output_gap ** 2)
-            extra_penalty =  - (obs[0] - true_state[0]) ** 2 - (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
+            extra_penalty = (obs[0] - true_state[0]) ** 2 + (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
             if self.use_penalty:
                 r_pi_penalty = 10 * r_pi if r_pi > desired_inflation ** 2 else 0
                 r_psi_penalty = 10 * r_psi if r_psi > desired_inflation ** 2 else 0
@@ -253,16 +268,19 @@ class AutonomousFed(gymnasium.Env):
 if __name__ == "__main__":
 
     specifications_set = input("Choose specifications set: {A, B, C}: ").upper()
-    # Initialize Ray Serve
-    serve.start()
 
-    # Load the models based on the specifications set
-    encoder_path = os.path.join('/home/erskordi/projects/Autonomous_Fed/saved_models/',f'encoder_FedModel_{specifications_set}.keras')
-    decoder_path = os.path.join('/home/erskordi/projects/Autonomous_Fed/saved_models/',f'decoder_FedModel_{specifications_set}.keras')
-    path = [encoder_path, decoder_path]
+    simulator = 'RF'
+    if simulator == 'VAE':
+        # Initialize Ray Serve
+        serve.start()
 
-    # Deploy the models
-    serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
+        # Load the models based on the specifications set
+        encoder_path = os.path.join('../../Autonomous_Fed/saved_models/',f'encoder_FedModel_{specifications_set}.keras')
+        decoder_path = os.path.join('../../Autonomous_Fed/saved_models/',f'decoder_FedModel_{specifications_set}.keras')
+        path = [encoder_path, decoder_path]
+
+        # Deploy the models
+        serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
     df, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
@@ -270,6 +288,7 @@ if __name__ == "__main__":
               'end_date': '2023-07-01', 
               'model_type': 'VAE',
               'action_specifications': 'ir_omega_equals',
+              'simulator': simulator,
               'omega_pi': 0.5,
               'omega_psi': 0.5,
               'specifications_set': specifications_set,
