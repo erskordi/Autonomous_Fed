@@ -9,7 +9,6 @@ from datetime import timedelta
 
 import ray
 from ray import tune, serve, air
-from ray.cluster_utils import Cluster
 from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.ddpg import DDPGConfig
@@ -19,7 +18,7 @@ from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.util.placement_group import placement_group
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
-from config import Config
+from config import Config, print_colored_text
 from env import AutonomousFed
 from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
 from sim import TF_VAE_Model
@@ -117,16 +116,6 @@ args = parser.parse_args()
 if ray.is_initialized():
     ray.shutdown(shutdown_at_exit=True)
 
-
-cluster = Cluster(
-    initialize_head=False,
-    head_node_args={
-        'num_cpus': args.n_cpus,
-        'num_gpus': args.n_gpus
-    },
-)
-cluster.shutdown()
-
 ray.init(
     #address = cluster.address,
     num_cpus=args.n_cpus,
@@ -157,7 +146,7 @@ df, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
 env_config = {'start_date': '1954-07-01', 
               'end_date': '2023-07-01', 
-              'model_type': 'VAE',
+              'model_type': args.simulator,
               'action_specifications': args.action_specifications,
               'simulator': args.simulator, 
               'omega_pi': args.omega_pi,
@@ -218,10 +207,13 @@ if args.no_tune:
 else:
     # automated run with Tune and grid search and TensorBoard
     print("Training automatically with Ray Tune")
-    tuner = tune.tuner.Tuner(
+    tuner = tune.Tuner(
         args.run,
         param_space=config.to_dict(),
         run_config=air.RunConfig(stop=stop, checkpoint_config=checkpoint_config),
         tune_config=tune.TuneConfig(reuse_actors=True),
     )
     results = tuner.fit()
+    best_result = results.get_best_result(metric="episode_reward_mean")
+    best_checkpoint = best_result.checkpoint 
+    print_colored_text(f"Best checkpoint path: {best_checkpoint}", color='green')

@@ -61,8 +61,11 @@ class AutonomousFed(gymnasium.Env):
         self.normalization_scheme = config['normalization_scheme']
 
         self.prev_states = []
+        self.prev_actions = []
 
         self.epsilon = 1e-10
+
+        self.initial_timestep = None
 
         low = 0.0
         high = 1.0
@@ -100,7 +103,9 @@ class AutonomousFed(gymnasium.Env):
         super().reset(seed=seed, options=options)
 
         # Reset the counter
-        AutonomousFed.cntr = 0#np.random.randint(0, len(self.quarterly_dates)-1)
+        AutonomousFed.cntr = np.random.randint(0, len(self.quarterly_dates)-1)
+        self.initial_timestep = AutonomousFed.cntr
+        self.prev_actions.clear()
 
         if self.normalization_scheme == 'minmax':
             inv_data = self.scaler.inverse_transform(self.df)
@@ -122,7 +127,6 @@ class AutonomousFed(gymnasium.Env):
         - truncated
         - info
         """
-        #print(f'Action: {action}, cntr: {AutonomousFed.cntr}')
         # Step 1: Action to list
         # If action is a dict, then it is a dict of the form {'interest_rate': 0.5, 'omega_pi': 0.5, 'omega_psi': 0.5}
         # Otherwise, it's only about the interest rate
@@ -132,12 +136,17 @@ class AutonomousFed(gymnasium.Env):
         else:
             action_ir = action['interest_rate'].tolist()
         
+        AutonomousFed.cntr += 1
+        self.prev_actions.append(action_ir[0])
+
         # Step 2: Get previous state 
-        prev_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
+        prev_state = self.df.iloc[AutonomousFed.cntr-1,1:].values.tolist()
+
+        predictor_input = np.array([*action_ir, *prev_state]).reshape(1,self.df.shape[1])
        
         # Choose simulator based on config
         if self.simulator == 'RF':
-            obs = self.regr.predict(np.array(action_ir+prev_state).reshape(1,self.df.shape[1]))[0]
+            obs = self.regr.predict(predictor_input)[0]
             # Add the new observation for t+1 to the dataframe
             inv_data = self.scaler.inverse_transform(np.array([*action_ir, *obs]).reshape(1, self.df.shape[1]))
         else:
@@ -155,9 +164,7 @@ class AutonomousFed(gymnasium.Env):
             inv_data = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
 
         # Recall true state (only used if we want to penalize deviation from true state in reward function)
-        true_state = self.df.iloc[AutonomousFed.cntr+1,1:].values.tolist()
-        
-        AutonomousFed.cntr += 1
+        true_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
 
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
@@ -174,6 +181,7 @@ class AutonomousFed(gymnasium.Env):
                 reward = self._reward(
                     obs,
                     true_state,
+                    action_ir[0],
                     self.omega_pi, 
                     self.omega_psi
                     )
@@ -181,6 +189,7 @@ class AutonomousFed(gymnasium.Env):
                 reward = self._reward(
                     obs, 
                     true_state,
+                    action_ir[0],
                     self.omega_pi, 
                     action['omega_psi'][0]
                     )
@@ -188,6 +197,7 @@ class AutonomousFed(gymnasium.Env):
                 reward = self._reward(
                     obs, 
                     true_state,
+                    action_ir[0],
                     action['omega_pi'][0], 
                     action['omega_psi'][0]
                     )
@@ -226,7 +236,7 @@ class AutonomousFed(gymnasium.Env):
 
         return obs, reward, terminated, truncated, info
     
-    def _reward(self, obs, true_state, a_pi, a_psi, cpi_t_minus_four=None):
+    def _reward(self, obs, true_state, action_ir, a_pi, a_psi, cpi_t_minus_four=None):
         """
         Reward defined using Taylor Rule for monetary policy:
 
@@ -245,12 +255,20 @@ class AutonomousFed(gymnasium.Env):
             r_pi = (inflation_diff ** 2)
             r_psi = (output_gap ** 2)
             extra_penalty = (obs[0] - true_state[0]) ** 2 + (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
+            previous_action_penalty = 100 * float(~np.isclose(
+                                                    self.prev_actions[-2], 
+                                                    action_ir, 
+                                                    rtol=1e-01, 
+                                                    atol=1e-01, 
+                                                    equal_nan=False)
+                                                   ) if len(self.prev_actions) > 1 else 0
             if self.use_penalty:
                 r_pi_penalty = 10 * r_pi if r_pi > desired_inflation ** 2 else 0
                 r_psi_penalty = 10 * r_psi if r_psi > desired_inflation ** 2 else 0
-                reward = - (a_pi * r_pi + a_psi * r_psi + r_pi_penalty + r_psi_penalty) - extra_penalty
+                reward = - (a_pi * r_pi + a_psi * r_psi + r_pi_penalty + r_psi_penalty)\
+                 - extra_penalty - previous_action_penalty
             else:
-                reward = - (a_pi * r_pi + a_psi * r_psi) - extra_penalty
+                reward = - (a_pi * r_pi + a_psi * r_psi) - extra_penalty - previous_action_penalty
         elif self.specifications_set == 'C':
             output_gap = np.exp(abs(obs[0] - obs[1]))
             cpi_inflation_diff = np.exp(abs(obs[2] - cpi_t_minus_four))
@@ -314,7 +332,6 @@ if __name__ == "__main__":
         #print(f'Action: {action}, Observation: {obs}, Reward: {reward}')
         #print(f'Info:\n {info}')
         #print()
-
         if terminated or truncated:
             obs, info = env.reset()
 

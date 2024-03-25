@@ -29,9 +29,10 @@ class LinearPolicy(TFModelV2):
             name='value_layer', 
             kernel_initializer=normc_initializer(0.01))(layer_out)
         self.base_model = tf.keras.Model(self.inputs, [layer_out, value_out])
+        #print(self.base_model.summary())
 
     def forward(self, input_dict, state, seq_lens):
-        model_out, self._value_out = self.base_model(input_dict["obs"])
+        model_out, self._value_out = self.base_model(input_dict["obs_flat"])
         return model_out, state
 
     def value_function(self):
@@ -64,6 +65,7 @@ class MLPModel(TFModelV2):
             name='value_layer', 
             kernel_initializer=normc_initializer(0.01))(layer_out)
         self.base_model = tf.keras.Model(self.inputs, model_out)
+        print(self.base_model.summary())
 
     def forward(self, input_dict, state, seq_lens):
         model_out, self._value_out = self.base_model(input_dict["obs"])
@@ -102,9 +104,11 @@ class LSTMModel(TFModelV2):
             name='value_layer', 
             kernel_initializer=normc_initializer(0.01))(layer_out)
         self.base_model = tf.keras.Model(self.inputs, model_out)
+        print(self.base_model.summary())
 
     def forward(self, input_dict, state, seq_lens):
         model_out, self._value_out = self.base_model(input_dict["obs"])
+        print(model_out)
         return model_out, state
 
     def value_function(self):
@@ -112,3 +116,11 @@ class LSTMModel(TFModelV2):
     
     def metrics(self):
         return {"foo": tf.constant(42.0)}
+
+
+if __name__ == "__main__":
+    ray.init()
+    model = LinearPolicy()
+    
+    
+    ray.shutdown()
