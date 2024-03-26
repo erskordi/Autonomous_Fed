@@ -16,7 +16,7 @@ from gymnasium import spaces
 from gymnasium.utils import seeding
 
 from config import Config
-from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
+from data_prep import gen_seq, series_to_supervised, plotting, DataPrep, return_to_domain
 from sim import TF_VAE_Model
 
 os.environ['PYTHONWARNINGS'] = "ignore::DeprecationWarning"
@@ -102,8 +102,8 @@ class AutonomousFed(gymnasium.Env):
         """
         super().reset(seed=seed, options=options)
 
-        # Reset the counter
-        AutonomousFed.cntr = np.random.randint(0, len(self.quarterly_dates)-1)
+        # Reset the counter to a random initial state, clear the list of previous interest rate actions
+        AutonomousFed.cntr = np.random.randint(0, len(self.quarterly_dates)-2)
         self.initial_timestep = AutonomousFed.cntr
         self.prev_actions.clear()
 
@@ -111,9 +111,8 @@ class AutonomousFed(gymnasium.Env):
             inv_data = self.scaler.inverse_transform(self.df)
             obs = inv_data[AutonomousFed.cntr,1:]
         else:
-            self.df['FEDFUNDS'] = self.df['FEDFUNDS'].map(lambda p: (np.where(p==1, self.epsilon, np.log((p + self.epsilon)/(1-p + self.epsilon)) / 100)))
-            self.df['Inflation_1'] = self.df['Inflation_1'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
-            self.df['Output_GAP'] = self.df['Output_GAP'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
+            self.df = return_to_domain(self.df, self.epsilon)
+            obs = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
 
         return obs, {self.quarterly_dates[AutonomousFed.cntr]: obs}#
 
@@ -130,54 +129,41 @@ class AutonomousFed(gymnasium.Env):
         # Step 1: Action to list
         # If action is a dict, then it is a dict of the form {'interest_rate': 0.5, 'omega_pi': 0.5, 'omega_psi': 0.5}
         # Otherwise, it's only about the interest rate
-        if self.config['action_specifications'] == 'ir_omega_equals' or \
-           self.config['action_specifications'] == 'ir_omega_not_equals':
+        if self.config['action_specifications'] in ('ir_omega_equals', 'ir_omega_not_equals'):
             action_ir = action.tolist()
         else:
             action_ir = action['interest_rate'].tolist()
         
-        AutonomousFed.cntr += 1
         self.prev_actions.append(action_ir[0])
 
         # Step 2: Get previous state 
-        prev_state = self.df.iloc[AutonomousFed.cntr-1,1:].values.tolist()
+        prev_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
 
         predictor_input = np.array([*action_ir, *prev_state]).reshape(1,self.df.shape[1])
        
-        # Choose simulator based on config
+        # Choose simulator (RF or VAE)
         if self.simulator == 'RF':
             obs = self.regr.predict(predictor_input)[0]
             # Add the new observation for t+1 to the dataframe
             inv_data = self.scaler.inverse_transform(np.array([*action_ir, *obs]).reshape(1, self.df.shape[1]))
         else:
             # Step 3: transform HTTP request -> tensorflow input
-            obs = requests.get(
-                    "http://localhost:8000/saved_models", 
-                    json={"array": 
-                            np.array(action_ir+prev_state).reshape(1,self.df.shape[1]).tolist()
-                        }
-                )
-        
-            # Step 4: tensorflow input -> tensorflow output
-            obs = obs.json()['prediction'][0]
+            obs = self._vae_output(action_ir, prev_state)
             # Add the new observation for t+1 to the dataframe
             inv_data = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
+            df_preds = pd.DataFrame(inv_data, columns=self.df.columns)
 
         # Recall true state (only used if we want to penalize deviation from true state in reward function)
-        true_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
+        true_state = self.df.iloc[AutonomousFed.cntr+1,1:].values.tolist()
 
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
             if self.normalization_scheme == 'minmax':
                 obs = inv_data[0,1:]
             else:
-                df_preds = pd.DataFrame(inv_data, columns=self.df.columns)
-                df_preds['FEDFUNDS'] = df_preds['FEDFUNDS'].map(lambda p: (np.where(p==1, self.epsilon, np.log((p + self.epsilon)/(1-p + self.epsilon)) / 100)))
-                df_preds['Inflation_1'] = df_preds['Inflation_1'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
-                df_preds['Output_GAP'] = df_preds['Output_GAP'].map(lambda p: np.log((p)/(1-p + self.epsilon)))
-            
-            if self.config['action_specifications'] == 'ir_omega_equals' or \
-            self.config['action_specifications'] == 'ir_omega_not_equals':
+                df_preds = return_to_domain(df_preds, self.epsilon)
+                obs = df_preds.iloc[0,1:].values.tolist()
+            if self.config['action_specifications'] in ('ir_omega_equals', 'ir_omega_not_equals'):
                 reward = self._reward(
                     obs,
                     true_state,
@@ -202,8 +188,7 @@ class AutonomousFed(gymnasium.Env):
                     action['omega_psi'][0]
                     )
         elif self.config['specifications_set'] == 'C':
-            if self.config['action_specifications'] == 'ir_omega_equals' or \
-            self.config['action_specifications'] == 'ir_omega_not_equals':
+            if self.config['action_specifications'] in ('ir_omega_equals', 'ir_omega_not_equals'):
                 reward = self._reward(
                     obs, 
                     self.omega_pi, 
@@ -228,6 +213,7 @@ class AutonomousFed(gymnasium.Env):
         truncated = {}
         info = {self.quarterly_dates[AutonomousFed.cntr]: obs}
 
+        AutonomousFed.cntr += 1
         # Step 6: Set terminated to True if cntr == len(self.quarterly_dates)
         if AutonomousFed.cntr == len(self.quarterly_dates)-1:
             terminated = True
@@ -276,6 +262,17 @@ class AutonomousFed(gymnasium.Env):
 
         return reward
     
+    def _vae_output(self, action_ir, prev_state):
+        obs = requests.get(
+                    "http://localhost:8000/saved_models", 
+                    json={"array": 
+                            np.array(action_ir+prev_state).reshape(1,self.df.shape[1]).tolist()
+                        }
+                )
+        
+        # Step 4: tensorflow input -> tensorflow output
+        return obs.json()['prediction'][0]
+
     def render(self, mode="human"):
         """
         render() as described in the OpenAI Gymnasium API (RLlib uses this API)
