@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import ray
@@ -97,8 +98,8 @@ class DataPrep:
         specifications_set = specifications_set.upper()
 
         if specifications_set == 'A':
-            column_names = ['FEDFUNDS',
-                            'Inflation_1',
+            column_names = ['Inflation_1',
+                            'FEDFUNDS',
                             'Output_GAP',
                             #'Natural_Rate_of_Interest',
                         ]
@@ -107,13 +108,17 @@ class DataPrep:
                             sheet_name="FRED Graph",
                             skiprows=range(9),
                             names=column_names,
-                            usecols='C,B,D', #,N
+                            usecols='B,C,D', #,N
                             #skipfooter=21
                             )
-
+            col_order = ['FEDFUNDS', 'Inflation_1', 'Output_GAP']
+            df = df[col_order]
             df.dropna(inplace=True)
-            #print(df.reset_index(drop=True))
-            """"""
+            """
+            plot = df.plot()
+            fig = plot.get_figure()
+            fig.savefig('../../Autonomous_Fed/results/input_data.png')
+            """
             #df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1/(1 + np.exp(-x))))
             #df["Output_GAP"] = df["Output_GAP"].map(lambda x: (1/(1 + np.exp(-x))))
             #df["Inflation_1"] = df["Inflation_1"].map(lambda x: (1/(1 + np.exp(-x))))                                                                   
@@ -154,24 +159,23 @@ class DataPrep:
                             )
 
             df.dropna(inplace=True)
-            """
-            df["FEDFUNDS"] = df["FEDFUNDS"].map(lambda x: (1+x)/100)
-            df["log_GDP"] = df["log_GDP"].map(lambda x: (1+x)/100)
-            df["log_potential_GDP"] = df["log_potential_GDP"].map(lambda x: (1+x)/100)
-            df["log_CPI"] = df["log_CPI"].map(lambda x: (1+x)/100)
-            df["Natural_Rate_of_Interest"] = df["Natural_Rate_of_Interest"].map(lambda x: (1+x)/100)
-            """
         
         if specifications_set in ['A', 'C']:
             from sklearn.preprocessing import MinMaxScaler
+
+            if not os.path.exists('../results'):
+                os.makedirs('../../Autonomous_Fed/results')
 
             input_data = df
             scaler = MinMaxScaler(feature_range=(0, 1))
             normalized_input_data = scaler.fit_transform(input_data)
             df = pd.DataFrame(normalized_input_data, columns=column_names)
-
+            """
+            plot = df.plot()
+            fig = plot.get_figure()
+            fig.savefig('../../Autonomous_Fed/results/normalized_input_data.png')
             #return df
-        """"""
+           """
         return df, scaler
     
     def inverse_transform(self, data):
@@ -188,6 +192,7 @@ if __name__ == "__main__":
     df.reset_index(drop=True, inplace=True)
     print(df)
     #print(df.shape)
+    """
     df_copy = df.copy()
     df_copy.reset_index(drop=True, inplace=True)
     df_copy['FEDFUNDS'] = df_copy['FEDFUNDS'].map(lambda p: np.log((p + epsilon)/(1-p + epsilon)))
@@ -196,4 +201,4 @@ if __name__ == "__main__":
     print(df_copy)  
     plt.plot(df)
     plt.show()
-
+    """

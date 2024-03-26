@@ -24,7 +24,7 @@ y = df.iloc[1:, 1:].values
 print(X.shape, y.shape)
 
 # Train random forest regressor
-regr = RandomForestRegressor(max_depth=8, random_state=0)
+regr = RandomForestRegressor(max_depth=5, random_state=0)
 regr.fit(X, y)
 
 # Save model to '../saved_models'
@@ -47,8 +47,12 @@ r2 = r2_score(y, y_pred)
 print(f'Mean Squared Error: {mse}')
 print(f'R2 Score: {r2}')
 
+if not os.path.exists('../results'):
+    os.makedirs('../../Autonomous_Fed/results')
+
 # Plot
 plt.plot(y, label='True')
 plt.plot(y_pred, label='Predicted')
 plt.legend()
-plt.show()
+#plt.show()
+plt.savefig('../../Autonomous_Fed/results/rf_regressor.png')
