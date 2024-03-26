@@ -71,6 +71,12 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
         agg.dropna(inplace=True)
     return agg
 
+def return_to_domain(df, epsilon):
+    df['FEDFUNDS'] = df['FEDFUNDS'].map(lambda p: (np.where(p==1, epsilon, np.log((p + epsilon)/(1-p + epsilon)) / 100)))
+    df['Inflation_1'] = df['Inflation_1'].map(lambda p: np.log((p)/(1-p + epsilon)))
+    df['Output_GAP'] = df['Output_GAP'].map(lambda p: np.log((p)/(1-p + epsilon)))
+    return df
+
 class DataPrep:
     def __init__(self) -> None:
         self.config = Config()
