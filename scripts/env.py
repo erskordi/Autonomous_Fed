@@ -30,9 +30,10 @@ class AutonomousFed(gymnasium.Env):
         self.config = config
 
         self.model_config = config['model_config']
-        self.df = config['df']
+        self.data = config['df'][0].values
+        self.true_ir = config['df'][1].values
         self.scaler = config['scaler']
-        self.columns = self.df.columns
+        self.columns = ['FEDFUNDS', 'Inflation_1', 'Output_GAP']
         #self.original_df = self.df.copy()
 
         self.model_type = config['model_type']
@@ -68,7 +69,7 @@ class AutonomousFed(gymnasium.Env):
         self.initial_timestep = None
 
         low = 0.0
-        high = 1.0
+        high = 100.0
 
         if self.config['action_specifications'] == 'ir_omega_equals':
             self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
@@ -103,13 +104,13 @@ class AutonomousFed(gymnasium.Env):
         super().reset(seed=seed, options=options)
 
         # Reset the counter to a random initial state, clear the list of previous interest rate actions
-        AutonomousFed.cntr = np.random.randint(0, len(self.quarterly_dates)-2)
+        AutonomousFed.cntr = 1#np.random.randint(1, len(self.quarterly_dates)-2)
         self.initial_timestep = AutonomousFed.cntr
         self.prev_actions.clear()
 
         if self.normalization_scheme == 'minmax':
-            inv_data = self.scaler.inverse_transform(self.df)
-            obs = inv_data[AutonomousFed.cntr,1:]
+            inv_data = self.scaler.inverse_transform([self.data])
+            obs = inv_data[AutonomousFed.cntr,:]
         else:
             self.df = return_to_domain(self.df, self.epsilon)
             obs = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
@@ -297,7 +298,7 @@ if __name__ == "__main__":
         # Deploy the models
         serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
-    df, scaler = DataPrep().read_data(specifications_set=specifications_set)
+    df, df_interest_rate, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
     config = {'start_date': '1954-07-01', 
               'end_date': '2023-07-01', 
@@ -309,7 +310,7 @@ if __name__ == "__main__":
               'specifications_set': specifications_set,
               'use_penalty': False,
               'normalization_scheme': 'minmax',
-              'df': df,
+              'df': [df, df_interest_rate],
               'scaler': scaler,
               'model_config': Config()}
 
@@ -317,7 +318,6 @@ if __name__ == "__main__":
     episode_length = len(pd.date_range(start=config['start_date'], end=config['end_date'], freq='QS-JAN'))
 
     env = AutonomousFed(config)
-
     # Environment sanity test
     obs = env.reset()
     print(f'Observation: {obs}')

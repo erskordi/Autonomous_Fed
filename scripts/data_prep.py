@@ -114,6 +114,9 @@ class DataPrep:
             col_order = ['FEDFUNDS', 'Inflation_1', 'Output_GAP']
             df = df[col_order]
             df.dropna(inplace=True)
+            #print(df)
+            df_interest_rate = df['FEDFUNDS']
+            df.drop(columns=['FEDFUNDS'], inplace=True)
             """
             plot = df.plot()
             fig = plot.get_figure()
@@ -166,17 +169,22 @@ class DataPrep:
             if not os.path.exists('../results'):
                 os.makedirs('../../Autonomous_Fed/results')
 
-            input_data = df
             scaler = MinMaxScaler(feature_range=(0, 1))
-            normalized_input_data = scaler.fit_transform(input_data)
-            df = pd.DataFrame(normalized_input_data, columns=column_names)
-            """
+            normalized_input_data = scaler.fit_transform(df)
+            df = pd.DataFrame(normalized_input_data, columns=['Inflation_1', 'Output_GAP'])
+            df.reset_index(drop=True, inplace=True)
+            df_interest_rate.reset_index(drop=True, inplace=True)
+            
             plot = df.plot()
             fig = plot.get_figure()
             fig.savefig('../../Autonomous_Fed/results/normalized_input_data.png')
+            plt.clf()
+            plot_ir = df_interest_rate.plot()
+            fig_ir = plot_ir.get_figure()
+            fig_ir.savefig('../../Autonomous_Fed/results/interest_rate.png')
             #return df
-           """
-        return df, scaler
+            """"""
+        return df, df_interest_rate, scaler
     
     def inverse_transform(self, data):
         from sklearn.preprocessing import MinMaxScaler
@@ -188,9 +196,10 @@ if __name__ == "__main__":
     epsilon = 1e-10
     data_prep = DataPrep()
     specifications_set = input("Choose specifications set: {A, B, C}: ")
-    df, scaler = data_prep.read_data(specifications_set=specifications_set)
-    df.reset_index(drop=True, inplace=True)
+    df, df_interest_rate, scaler = data_prep.read_data(specifications_set=specifications_set)
+    #df.reset_index(drop=True, inplace=True)
     print(df)
+    print(df_interest_rate)
     #print(df.shape)
     """
     df_copy = df.copy()

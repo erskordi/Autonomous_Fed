@@ -44,7 +44,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--framework",
-    choices=["tf", "tf2", "torch"],
+    choices=["tf", "tf1", "torch"],
     default="torch",
     help="The DL framework specifier.",
 )
@@ -142,7 +142,7 @@ if args.simulator == 'VAE':
     #TF_VAE_Model.deploy(path)
     serve.run(target=TF_VAE_Model.bind(path),logging_config={"log_level": "ERROR"})
 
-df, scaler = DataPrep().read_data(specifications_set=specifications_set)
+df, df_interest_rate, scaler = DataPrep().read_data(specifications_set=specifications_set)
 
 env_config = {'start_date': '1954-07-01', 
               'end_date': '2023-07-01', 
@@ -154,7 +154,7 @@ env_config = {'start_date': '1954-07-01',
               'specifications_set': specifications_set,
               'use_penalty': args.use_penalty,
               'normalization_scheme': args.normalization_scheme,
-              'df': df,
+              'df': [df, df_interest_rate],
               'scaler': scaler,
               'model_config': Config()}
 
@@ -166,10 +166,11 @@ config.training(
     kl_coeff=0.2,
     lr=0.01,
     grad_clip=0.01,
-    model={
-        "custom_model": "linear_model",
-        "custom_model_config": {},
-    },
+    sgd_minibatch_size=16,
+    #model={
+    #    "custom_model": "linear_model",
+    #    "custom_model_config": {},
+    #},
 )
 config = config.framework(args.framework)
 config = config.environment(env_name, disable_env_checking=True)

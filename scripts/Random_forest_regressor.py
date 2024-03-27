@@ -11,11 +11,11 @@ from config import Config
 from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
 
 config = Config()
-data_prep = DataPrep()
 
 specifications_set = input("Choose specifications set: {0, 1, 2, 3, A, B, C}: ").upper()
-df, _ = data_prep.read_data(specifications_set=specifications_set)
-df.reset_index(drop=True, inplace=True)
+df, df_interest_rate, _ = DataPrep().read_data(specifications_set=specifications_set)
+df = pd.merge(df_interest_rate, df, left_index=True, right_index=True)
+#df.reset_index(drop=True, inplace=True)
 print(df.head())
 
 # Use all data for RF fitting
@@ -51,6 +51,7 @@ if not os.path.exists('../results'):
     os.makedirs('../../Autonomous_Fed/results')
 
 # Plot
+plt.clf()
 plt.plot(y, label='True')
 plt.plot(y_pred, label='Predicted')
 plt.legend()
