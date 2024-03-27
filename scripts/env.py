@@ -218,7 +218,7 @@ class AutonomousFed(gymnasium.Env):
             AutonomousFed.cntr = 0
             self.prev_states = []
 
-        return obs, reward, terminated, truncated, info
+        return *obs, reward, terminated, truncated, info
     
     def _reward(self, obs, true_state, action_ir, a_pi, a_psi, cpi_t_minus_four=None):
         """
