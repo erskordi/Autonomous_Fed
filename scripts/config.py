@@ -44,8 +44,8 @@ class Config(object):
 
         self.path_to_data = (
             "/Users/erotokritosskordilis/Dropbox/ProvostAward2024/MonetaryPolicy_AI/Data_in_Levels.xlsx" 
-            if platform.system() != "Ubuntu" else 
-            "/home/erotokrit/ProvostAward2024/MonetaryPolicy_AI/Data_in_Levels.xlsx"
+            if platform.system() != "Linux" else 
+            "../../Autonomous_Fed/data/Data_in_Levels.xlsx"
             )
 
         # suffixes

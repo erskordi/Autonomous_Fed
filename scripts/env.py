@@ -109,7 +109,7 @@ class AutonomousFed(gymnasium.Env):
         self.prev_actions.clear()
 
         if self.normalization_scheme == 'minmax':
-            inv_data = self.scaler.inverse_transform([self.data])
+            inv_data = self.scaler.inverse_transform(self.data)
             obs = inv_data[AutonomousFed.cntr,:]
         else:
             self.df = return_to_domain(self.df, self.epsilon)
@@ -135,56 +135,53 @@ class AutonomousFed(gymnasium.Env):
         else:
             action_ir = action['interest_rate'].tolist()
         
-        self.prev_actions.append(action_ir[0])
+        self.prev_actions.append(*action_ir)
 
         # Step 2: Get previous state 
-        prev_state = self.df.iloc[AutonomousFed.cntr,1:].values.tolist()
+        prev_state = self.data[AutonomousFed.cntr,:]
 
-        predictor_input = np.array([*action_ir, *prev_state]).reshape(1,self.df.shape[1])
+        predictor_input = np.array([[*action_ir, *prev_state]])
        
         # Choose simulator (RF or VAE)
         if self.simulator == 'RF':
             obs = self.regr.predict(predictor_input)[0]
             # Add the new observation for t+1 to the dataframe
-            inv_data = self.scaler.inverse_transform(np.array([*action_ir, *obs]).reshape(1, self.df.shape[1]))
+            obs = self.scaler.inverse_transform([obs])
         else:
             # Step 3: transform HTTP request -> tensorflow input
             obs = self._vae_output(action_ir, prev_state)
             # Add the new observation for t+1 to the dataframe
-            inv_data = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
-            df_preds = pd.DataFrame(inv_data, columns=self.df.columns)
+            obs = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
+            obs = pd.DataFrame(obs, columns=self.df.columns)
+            obs = return_to_domain(obs, self.epsilon)
+            obs = obs.iloc[0,1:].values.tolist()
 
         # Recall true state (only used if we want to penalize deviation from true state in reward function)
-        true_state = self.df.iloc[AutonomousFed.cntr+1,1:].values.tolist()
+        true_state = self.scaler.inverse_transform([self.data[AutonomousFed.cntr+1,:]])
 
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
-            if self.normalization_scheme == 'minmax':
-                obs = inv_data[0,1:]
-            else:
-                df_preds = return_to_domain(df_preds, self.epsilon)
-                obs = df_preds.iloc[0,1:].values.tolist()
             if self.config['action_specifications'] in ('ir_omega_equals', 'ir_omega_not_equals'):
                 reward = self._reward(
-                    obs,
-                    true_state,
-                    action_ir[0],
+                    *obs,
+                    *true_state,
+                    *action_ir,
                     self.omega_pi, 
                     self.omega_psi
                     )
             elif self.config['action_specifications'] == 'ir_omega_pi_action':
                 reward = self._reward(
-                    obs, 
-                    true_state,
-                    action_ir[0],
+                    *obs,
+                    *true_state,
+                    *action_ir,
                     self.omega_pi, 
                     action['omega_psi'][0]
                     )
             else:
                 reward = self._reward(
-                    obs, 
-                    true_state,
-                    action_ir[0],
+                    *obs,
+                    *true_state,
+                    *action_ir,
                     action['omega_pi'][0], 
                     action['omega_psi'][0]
                     )
@@ -238,7 +235,7 @@ class AutonomousFed(gymnasium.Env):
         desired_inflation = 2 # 2% desired inflation
         if self.specifications_set == 'A':
             output_gap = obs[1]
-            inflation_diff = abs(obs[0] - desired_inflation)
+            inflation_diff = (obs[0] - desired_inflation)
             r_pi = (inflation_diff ** 2)
             r_psi = (output_gap ** 2)
             extra_penalty = (obs[0] - true_state[0]) ** 2 + (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
@@ -321,14 +318,17 @@ if __name__ == "__main__":
     # Environment sanity test
     obs = env.reset()
     print(f'Observation: {obs}')
+    total_reward = 0
 
     # Test step
     for _ in range(episode_length):
         action = env.action_space.sample()
         obs, reward, terminated, truncated, info = env.step(action)
         #print(f'Action: {action}, Observation: {obs}, Reward: {reward}')
+        total_reward += reward
         #print(f'Info:\n {info}')
         #print()
         if terminated or truncated:
             obs, info = env.reset()
 
+    print(f'Total reward: {total_reward}')
