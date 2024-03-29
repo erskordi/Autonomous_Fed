@@ -6,7 +6,7 @@ sudo apt-get clean
 
 # Enter password for sudo
 echo "Enter password to continue:"
-read -s I8Dcy32X&
+read -s "password"
 
 # Run rllib trainer
 echo "Running rllib trainer"
