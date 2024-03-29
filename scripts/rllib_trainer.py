@@ -13,7 +13,6 @@ from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.ddpg import DDPGConfig
 from ray.rllib.models import ModelCatalog
-from ray.rllib.models.tf.tf_modelv2 import TFModelV2
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.util.placement_group import placement_group
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
@@ -23,7 +22,7 @@ from env import AutonomousFed
 from data_prep import gen_seq, series_to_supervised, plotting, DataPrep
 from sim import TF_VAE_Model
 
-from policy_models import LinearPolicy, MLPModel, LSTMModel
+from policy_models import TfLinearPolicy, TorchLinearPolicy
 
 tf1, tf, tfv = try_import_tf()
 torch, _ = try_import_torch()
@@ -77,16 +76,16 @@ parser.add_argument(
     help="Weight for the inflation loss.",
 )
 parser.add_argument(
-    "--simulator",
-    type=str,
-    default="VAE",
-    help="Simulator type for the environment; list of values: 1. VAE, 2. Random Forest Regressor.",
-)
-parser.add_argument(
     "--omega-psi",
     type=float,
     default=0.5,
     help="Weight for the output gap loss.",
+)
+parser.add_argument(
+    "--simulator",
+    type=str,
+    default="VAE",
+    help="Simulator type for the environment; list of values: 1. VAE, 2. Random Forest Regressor.",
 )
 parser.add_argument(
     "--normalization-scheme",
@@ -123,9 +122,8 @@ ray.init(
     resources = {'special_hardware': 1}
 )
 
-ModelCatalog.register_custom_model("linear_model", LinearPolicy)
-ModelCatalog.register_custom_model("mlp_model", MLPModel)
-ModelCatalog.register_custom_model("lstm_model", LSTMModel)
+ModelCatalog.register_custom_model("tf_linear_model", TfLinearPolicy)
+ModelCatalog.register_custom_model("torch_linear_model", TorchLinearPolicy)
 
 specifications_set = input("Choose specifications set: {A, B, C}: ").upper()
 
@@ -163,14 +161,23 @@ register_env(env_name, lambda config: AutonomousFed(env_config))
 
 config = PPOConfig()
 config.training(
-    kl_coeff=0.2,
-    lr=0.01,
-    grad_clip=0.01,
+    gamma=0.99,
+    lr=1e-4,#tune.grid_search([1e-1, 1e-2, 1e-4]),
+    clip_param=0.2,
+    kl_coeff=0.3,
+    train_batch_size=32,
     sgd_minibatch_size=16,
-    #model={
-    #    "custom_model": "linear_model",
-    #    "custom_model_config": {},
-    #},
+    vf_clip_param=100.0,
+    grad_clip=0.5,
+    model={
+        "fcnet_hiddens": [32, 16, 8],
+        "fcnet_activation": "relu",
+        "post_fcnet_hiddens": [4],
+        "post_fcnet_activation": "None",
+        "free_log_std": True,
+        #"custom_model": "linear_model",
+        #"custom_model_config": {},
+    },
 )
 config = config.framework(args.framework)
 config = config.environment(env_name, disable_env_checking=True)
@@ -183,7 +190,7 @@ stop = {
         "episode_reward_mean": args.stop_reward,
     }
 
-checkpoint_config=air.CheckpointConfig(checkpoint_frequency=10)
+checkpoint_config=air.CheckpointConfig(checkpoint_frequency=50)
 
 if args.no_tune:
     # manual training with train loop using PPO and fixed learning rate
@@ -215,6 +222,6 @@ else:
         tune_config=tune.TuneConfig(reuse_actors=True),
     )
     results = tuner.fit()
-    best_result = results.get_best_result(metric="episode_reward_mean")
+    best_result = results.get_best_result(metric="reward")
     best_checkpoint = best_result.checkpoint 
     print_colored_text(f"Best checkpoint path: {best_checkpoint}", color='green')

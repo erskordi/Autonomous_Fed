@@ -104,7 +104,7 @@ class AutonomousFed(gymnasium.Env):
         super().reset(seed=seed, options=options)
 
         # Reset the counter to a random initial state, clear the list of previous interest rate actions
-        AutonomousFed.cntr = 1#np.random.randint(1, len(self.quarterly_dates)-2)
+        AutonomousFed.cntr = np.random.randint(1, len(self.quarterly_dates)-2)
         self.initial_timestep = AutonomousFed.cntr
         self.prev_actions.clear()
 
@@ -236,8 +236,8 @@ class AutonomousFed(gymnasium.Env):
         if self.specifications_set == 'A':
             output_gap = obs[1]
             inflation_diff = (obs[0] - desired_inflation)
-            r_pi = (inflation_diff ** 2)
-            r_psi = (output_gap ** 2)
+            r_pi = abs(inflation_diff)
+            r_psi = abs(output_gap)
             extra_penalty = (obs[0] - true_state[0]) ** 2 + (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
             previous_action_penalty = 100 * float(~np.isclose(
                                                     self.prev_actions[-2], 
@@ -257,6 +257,8 @@ class AutonomousFed(gymnasium.Env):
             output_gap = np.exp(abs(obs[0] - obs[1]))
             cpi_inflation_diff = np.exp(abs(obs[2] - cpi_t_minus_four))
             reward = - (a_pi * (cpi_inflation_diff ** 2) + a_psi * (output_gap** 2))# + obs[3]
+
+        reward /= len(self.quarterly_dates) - self.initial_timestep
 
         return reward
     
