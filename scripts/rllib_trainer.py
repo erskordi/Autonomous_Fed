@@ -43,7 +43,7 @@ parser.add_argument(
 )
 parser.add_argument(
     "--framework",
-    choices=["tf", "tf1", "torch"],
+    choices=["tf", "tf2", "torch"],
     default="torch",
     help="The DL framework specifier.",
 )
@@ -96,8 +96,8 @@ parser.add_argument(
 parser.add_argument(
     "--action-specifications",
     type=str,
-    default='ir_omega_equals',
-    help="Action specifications for the environment; list of values: 1. ir_omega_equals, 2. ir_omega_not_equals, 3. ir_omega_pi_action, 4. ir_omega_all.",
+    default='ir_omegas_fixed',
+    help="Action specifications for the environment; list of values: 1. ir_omegas_fixed, 2. ir_omega_pi_action, 3. ir_omega_all_actions.",
 )
 parser.add_argument(
     "--use-penalty",
@@ -162,7 +162,7 @@ register_env(env_name, lambda config: AutonomousFed(env_config))
 config = PPOConfig()
 config.training(
     gamma=0.99,
-    lr=1e-4,#tune.grid_search([1e-1, 1e-2, 1e-4]),
+    lr=1e-3,#tune.grid_search([1e-1, 1e-2, 1e-4]),
     clip_param=0.2,
     kl_coeff=0.3,
     train_batch_size=32,
@@ -170,13 +170,13 @@ config.training(
     vf_clip_param=100.0,
     grad_clip=0.5,
     model={
-        "fcnet_hiddens": [32, 16, 8],
-        "fcnet_activation": "relu",
-        "post_fcnet_hiddens": [4],
-        "post_fcnet_activation": "None",
-        "free_log_std": True,
-        #"custom_model": "linear_model",
-        #"custom_model_config": {},
+        #"fcnet_hiddens": [32, 16, 8],
+        #"fcnet_activation": "relu",
+        #"post_fcnet_hiddens": [4],
+        #"post_fcnet_activation": "None",
+        #"free_log_std": True,
+        "custom_model": "torch_linear_model",
+        "custom_model_config": {},
     },
 )
 config = config.framework(args.framework)

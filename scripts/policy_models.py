@@ -17,7 +17,7 @@ class TfLinearPolicy(TFModelV2):
     In this model, we only have a single layer.
     """
     def __init__(self, obs_space, action_space, num_outputs, model_config, name, **kwargs):
-        super(LinearPolicy, self).__init__(obs_space, action_space, num_outputs, model_config, name)
+        super(TfLinearPolicy, self).__init__(obs_space, action_space, num_outputs, model_config, name)
         
         self.inputs = tf.keras.layers.Input(shape=obs_space.shape, name="observations")
         layer_out = tf.keras.layers.Dense(

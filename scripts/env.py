@@ -27,6 +27,8 @@ class AutonomousFed(gymnasium.Env):
     cntr = 0
     def __init__(self, config):
         super().__init__()
+
+        logging.basicConfig(filename='agent_training.log', level=logging.INFO)
         self.config = config
 
         self.model_config = config['model_config']
@@ -71,9 +73,7 @@ class AutonomousFed(gymnasium.Env):
         low = 0.0
         high = 100.0
 
-        if self.config['action_specifications'] == 'ir_omega_equals':
-            self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
-        elif self.config['action_specifications'] == 'ir_omega_not_equals':
+        if self.config['action_specifications'] == 'ir_omegas_fixed':
             self.action_space = spaces.Box(low=low, high=high, shape=(1,), dtype=np.float32)
         elif self.config['action_specifications'] == 'ir_omega_pi_action':
             self.action_space = spaces.Dict({
@@ -107,6 +107,7 @@ class AutonomousFed(gymnasium.Env):
         AutonomousFed.cntr = np.random.randint(1, len(self.quarterly_dates)-2)
         self.initial_timestep = AutonomousFed.cntr
         self.prev_actions.clear()
+        logging.info(f"Resetting environment at timestep {AutonomousFed.cntr} | Range: {len(self.quarterly_dates) - self.initial_timestep}")
 
         if self.normalization_scheme == 'minmax':
             inv_data = self.scaler.inverse_transform(self.data)
@@ -130,7 +131,7 @@ class AutonomousFed(gymnasium.Env):
         # Step 1: Action to list
         # If action is a dict, then it is a dict of the form {'interest_rate': 0.5, 'omega_pi': 0.5, 'omega_psi': 0.5}
         # Otherwise, it's only about the interest rate
-        if self.config['action_specifications'] in ('ir_omega_equals', 'ir_omega_not_equals'):
+        if self.config['action_specifications'] == 'ir_omegas_fixed':
             action_ir = action.tolist()
         else:
             action_ir = action['interest_rate'].tolist()
@@ -161,21 +162,13 @@ class AutonomousFed(gymnasium.Env):
 
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
-            if self.config['action_specifications'] in ('ir_omega_equals', 'ir_omega_not_equals'):
+            if self.config['action_specifications'] == 'ir_omegas_fixed':
                 reward = self._reward(
                     *obs,
                     *true_state,
                     *action_ir,
                     self.omega_pi, 
                     self.omega_psi
-                    )
-            elif self.config['action_specifications'] == 'ir_omega_pi_action':
-                reward = self._reward(
-                    *obs,
-                    *true_state,
-                    *action_ir,
-                    self.omega_pi, 
-                    action['omega_psi'][0]
                     )
             else:
                 reward = self._reward(
@@ -231,21 +224,23 @@ class AutonomousFed(gymnasium.Env):
         
         - Desired inflation = 0.02
         """
+        def _isclose(x, y, rtol=1e-01, atol=1e-01):
+            return ~np.isclose(self.prev_actions[-2], 
+                                action_ir, 
+                                rtol=1e-01, 
+                                atol=1e-01, 
+                                equal_nan=False)
+        
         use_extra_penalty = False
         desired_inflation = 2 # 2% desired inflation
+        
         if self.specifications_set == 'A':
             output_gap = obs[1]
             inflation_diff = (obs[0] - desired_inflation)
-            r_pi = abs(inflation_diff)
-            r_psi = abs(output_gap)
+            r_pi = abs(inflation_diff) ** 2
+            r_psi = abs(output_gap) ** 2
             extra_penalty = (obs[0] - true_state[0]) ** 2 + (obs[1] - true_state[1]) ** 2 if use_extra_penalty else 0
-            previous_action_penalty = 100 * float(~np.isclose(
-                                                    self.prev_actions[-2], 
-                                                    action_ir, 
-                                                    rtol=1e-01, 
-                                                    atol=1e-01, 
-                                                    equal_nan=False)
-                                                   ) if len(self.prev_actions) > 1 else 0
+            previous_action_penalty = 100 * float(_isclose(self.prev_actions[-2], action_ir)) if len(self.prev_actions) > 1 else 0
             if self.use_penalty:
                 r_pi_penalty = 10 * r_pi if r_pi > desired_inflation ** 2 else 0
                 r_psi_penalty = 10 * r_psi if r_psi > desired_inflation ** 2 else 0
