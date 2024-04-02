@@ -2,12 +2,17 @@ from gc import callbacks
 from tabnanny import verbose
 import os
 import numpy as np
+import pandas as pd
 import pickle
-import tensorflow as tf
 
+import matplotlib.pyplot as plt
+
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.python.keras.layers import deserialize, serialize
 from tensorflow.python.keras.saving import saving_utils
+
+from sklearn.metrics import mean_squared_error, r2_score
 
 from itertools import chain
 
@@ -53,14 +58,15 @@ if __name__ == "__main__":
     cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_path, save_weights_only=True,verbose=1)
 
     config = Config()
-    data_prep = DataPrep()
 
-    specifications_set = input("Choose specifications set: {0, 1, 2, 3, A, B, C}: ")
+    specifications_set = input("Choose specifications set: {A, B, C}: ")
     if specifications_set.isdigit():
         specifications_set = int(specifications_set)
-    df, _ = data_prep.read_data(specifications_set=specifications_set)
-    df.reset_index(drop=True, inplace=True)
+    df, df_interest_rate, _ = DataPrep().read_data(specifications_set=specifications_set)
+    df = pd.merge(df_interest_rate, df, left_index=True, right_index=True)
+    #df.reset_index(drop=True, inplace=True)
     print(df.head())
+
     # Build encoder
     latent_dim = config.latent_dim
 
@@ -135,4 +141,26 @@ if __name__ == "__main__":
     decoder.save(f'../saved_models/decoder_FedModel_{specifications_set}.keras')
 
     vae.save(f'../saved_models/vae_FedModel_{specifications_set}.keras')
+
+    # Load models
+    encoder = tf.keras.models.load_model(f'../saved_models/encoder_FedModel_{specifications_set}.keras', safe_mode=False)
+    decoder = tf.keras.models.load_model(f'../saved_models/decoder_FedModel_{specifications_set}.keras', safe_mode=False)
+
+    # Predict
+    y_pred = decoder.predict(encoder.predict(x_train[:-1,:]))
+
+    # Evaluate
+    mse = mean_squared_error(x_train[1:,1:], y_pred)
+    r2 = r2_score(x_train[1:,1:], y_pred)
+
+    print(f'Mean Squared Error: {mse}')
+    print(f'R2 Score: {r2}')
+
+    # Plot
+    plt.clf()
+    plt.plot(x_train[1:,1:], label='True')
+    plt.plot(y_pred, label='Predicted')
+    plt.legend()
+    plt.show()
+    plt.savefig('../../Autonomous_Fed/results/vae_evaluation.png')
     
