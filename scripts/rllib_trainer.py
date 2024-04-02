@@ -12,6 +12,7 @@ from ray import tune, serve, air
 from ray.tune.registry import register_env
 from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.ddpg import DDPGConfig
+from ray.rllib.algorithms.algorithm import Algorithm
 from ray.rllib.models import ModelCatalog
 from ray.rllib.utils.framework import try_import_tf, try_import_torch
 from ray.util.placement_group import placement_group
@@ -40,12 +41,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--n-cpus", type=int, default=cpu_count, help="Number of CPUs to use.")
 parser.add_argument(
     "--run", type=str, default="PPO", help="The RLlib-registered algorithm to use."
-)
-parser.add_argument(
-    "--framework",
-    choices=["tf", "tf2", "torch"],
-    default="torch",
-    help="The DL framework specifier.",
 )
 parser.add_argument(
     "--as-test",
@@ -168,18 +163,18 @@ config.training(
     train_batch_size=32,
     sgd_minibatch_size=16,
     vf_clip_param=100.0,
-    grad_clip=0.5,
+    grad_clip=20,
     model={
-        #"fcnet_hiddens": [32, 16, 8],
-        #"fcnet_activation": "relu",
+        #"fcnet_hiddens": [df.shape[1]],
+        #"fcnet_activation": None,
         #"post_fcnet_hiddens": [4],
         #"post_fcnet_activation": "None",
         #"free_log_std": True,
-        "custom_model": "torch_linear_model",
+        "custom_model": "tf_linear_model",
         "custom_model_config": {},
     },
 )
-config = config.framework(args.framework)
+config = config.framework("tf2")
 config = config.environment(env_name, disable_env_checking=True)
 config = config.resources(num_gpus=args.n_gpus)
 config = config.rollouts(num_rollout_workers=int(.75*(args.n_cpus)))
@@ -225,3 +220,7 @@ else:
     best_result = results.get_best_result(metric="reward")
     best_checkpoint = best_result.checkpoint 
     print_colored_text(f"Best checkpoint path: {best_checkpoint}", color='green')
+
+    algo = Algorithm.from_checkpoint(best_checkpoint)
+    weights = algo.get_weights()
+    pprint.pprint(weights)
