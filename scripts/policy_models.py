@@ -16,6 +16,8 @@ from ray.rllib.utils.framework import try_import_tf, try_import_torch
 
 from tensorflow.keras.utils import plot_model
 
+from torchviz import make_dot
+
 tf1, tf, tfv = try_import_tf()
 torch, nn = try_import_torch()
 
@@ -115,7 +117,7 @@ class TorchLinearPolicy(TorchModelV2, torch.nn.Module):
         activation = None
         if not model_config.get("fcnet_hiddens", []):
             activation = model_config.get("post_fcnet_activation")
-        no_final_linear = True
+        no_final_linear = False
         self.vf_share_layers = True
         self.free_log_std = False
 
@@ -123,18 +125,17 @@ class TorchLinearPolicy(TorchModelV2, torch.nn.Module):
         layers = []
         prev_layer_size = int(np.product(obs_space.shape))
         self._logits = None
-        print(f"prev_layer_size: {prev_layer_size}")
         layers.append(
             SlimFC(
                 in_size=prev_layer_size,
-                out_size=oint(np.product(obs_space.shape)),
+                out_size=num_outputs,
                 initializer=normc_initializer(1.0),
                 activation_fn=activation,
             )
         )
-        if num_outputs:
+        if no_final_linear and num_outputs:
             self._logits = SlimFC(
-                in_size=obs_space.shape,
+                in_size=int(np.product(obs_space.shape)),
                 out_size=num_outputs,
                 initializer=normc_initializer(0.01),
                 activation_fn=None,
@@ -182,3 +183,18 @@ class TorchLinearPolicy(TorchModelV2, torch.nn.Module):
         else:
             out = self._value_branch(self._features).squeeze(1)
         return out
+
+if __name__ == "__main__":
+    # Test the custom model
+    obs_space = gym.spaces.Box(low=-100.0, high=100.0, shape=(2,))
+    action_space = gym.spaces.Box(low=0.0, high=1.0, shape=(1,))
+    model_config = {}
+    name = "test_model"
+    num_outputs = 2
+
+    input_dict = {"obs_flat": np.array([[1.0, 2.0]]), "obs": np.array([[1.0, 2.0]])}
+
+    # Test the Torch model
+    torch_model = TorchLinearPolicy(obs_space, action_space, num_outputs, model_config, name)
+    print(torch_model)
+    
