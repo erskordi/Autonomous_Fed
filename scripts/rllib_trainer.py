@@ -80,7 +80,7 @@ parser.add_argument(
     "--simulator",
     type=str,
     default="VAE",
-    help="Simulator type for the environment; list of values: 1. VAE, 2. Random Forest Regressor.",
+    help="Simulator type for the environment; list of values: 1. VAE, 2. Random Forest Regressor. 3. Linear Regressor.",
 )
 parser.add_argument(
     "--normalization-scheme",
@@ -139,7 +139,6 @@ df, df_interest_rate, scaler = DataPrep().read_data(specifications_set=specifica
 
 env_config = {'start_date': '1954-07-01', 
               'end_date': '2023-07-01', 
-              'model_type': args.simulator,
               'action_specifications': args.action_specifications,
               'simulator': args.simulator, 
               'omega_pi': args.omega_pi,
@@ -149,32 +148,33 @@ env_config = {'start_date': '1954-07-01',
               'normalization_scheme': args.normalization_scheme,
               'df': [df, df_interest_rate],
               'scaler': scaler,
-              'model_config': Config()}
+              'model_config': Config(),
+              'training_setting': True}
 
 env_name = "AutonomousFed"
 register_env(env_name, lambda config: AutonomousFed(env_config))
 
 config = PPOConfig()
 config.training(
-    gamma=0.99,
-    lr=1e-3,#tune.grid_search([1e-1, 1e-2, 1e-4]),
-    clip_param=0.2,
-    kl_coeff=0.3,
-    train_batch_size=32,
-    sgd_minibatch_size=16,
-    vf_clip_param=100.0,
-    grad_clip=20,
-    model={
-        #"fcnet_hiddens": [df.shape[1]],
-        #"fcnet_activation": None,
+    #gamma=0.99,
+    #lr=1e-4,#tune.grid_search([1e-1, 1e-2, 1e-4]),
+    #clip_param=0.2,
+    #kl_coeff=0.,
+    #train_batch_size=32,
+    #sgd_minibatch_size=16,
+    #vf_clip_param=100.0,
+    #grad_clip=0.1,
+    #model={
+        #"fcnet_hiddens": [32, 16, 8],
+        #"fcnet_activation": "relu",
         #"post_fcnet_hiddens": [4],
-        #"post_fcnet_activation": "None",
+        #"post_fcnet_activation": "relu",
         #"free_log_std": True,
-        "custom_model": "tf_linear_model",
-        "custom_model_config": {},
-    },
+        #"custom_model": "tf_linear_model",
+        #"custom_model_config": {},
+    #},
 )
-config = config.framework("tf2")
+config = config.framework("tf")
 config = config.environment(env_name, disable_env_checking=True)
 config = config.resources(num_gpus=args.n_gpus)
 config = config.rollouts(num_rollout_workers=int(.75*(args.n_cpus)))
@@ -221,6 +221,8 @@ else:
     best_checkpoint = best_result.checkpoint 
     print_colored_text(f"Best checkpoint path: {best_checkpoint}", color='green')
 
+    """
     algo = Algorithm.from_checkpoint(best_checkpoint)
     weights = algo.get_weights()
     pprint.pprint(weights)
+    """

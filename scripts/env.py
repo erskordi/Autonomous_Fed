@@ -38,8 +38,6 @@ class AutonomousFed(gymnasium.Env):
         self.columns = ['FEDFUNDS', 'Inflation_1', 'Output_GAP']
         #self.original_df = self.df.copy()
 
-        self.model_type = config['model_type']
-
         # Define start and end dates (this is arbitrary)
         self.start_date = config['start_date']
         self.end_date = config['end_date']
@@ -54,9 +52,14 @@ class AutonomousFed(gymnasium.Env):
             f"Specifications set {config['specifications_set']},omega_pi = {self.omega_pi},\
             omega_psi = {self.omega_psi}"
         )
-
-        with open('../../Autonomous_Fed/saved_models/rf_regressor.pkl', 'rb') as f:
-            self.regr = pickle.load(f)
+        print(self.simulator)
+        if self.simulator == 'RF':
+            with open('../../Autonomous_Fed/saved_models/rf_regressor.pkl', 'rb') as f:
+                self.regr = pickle.load(f)
+        
+        if self.simulator == 'LR':
+            with open('../../Autonomous_Fed/saved_models/lr_regressor.pkl', 'rb') as f:
+                self.regr = pickle.load(f)
 
         self.specifications_set = config['specifications_set']
 
@@ -104,7 +107,7 @@ class AutonomousFed(gymnasium.Env):
         super().reset(seed=seed, options=options)
 
         # Reset the counter to a random initial state, clear the list of previous interest rate actions
-        AutonomousFed.cntr = np.random.randint(1, len(self.quarterly_dates)-2)
+        AutonomousFed.cntr = np.random.randint(1, len(self.quarterly_dates)-2) if self.config['training_setting'] else 0
         self.initial_timestep = AutonomousFed.cntr
         self.prev_actions.clear()
         logging.info(f"Resetting environment at timestep {AutonomousFed.cntr} | Range: {len(self.quarterly_dates) - self.initial_timestep}")
@@ -140,26 +143,25 @@ class AutonomousFed(gymnasium.Env):
 
         # Step 2: Get previous state 
         prev_state = self.data[AutonomousFed.cntr,:]
-
+        logger.info(f"Previous state: {prev_state}, Action: {action_ir}")
         predictor_input = np.array([[*action_ir, *prev_state]])
        
-        # Choose simulator (RF or VAE)
-        if self.simulator == 'RF':
+        # Choose simulator (RF, VAE, LR)
+        if self.simulator in ['RF', 'LR']:
             obs = self.regr.predict(predictor_input)[0]
             # Add the new observation for t+1 to the dataframe
             obs = self.scaler.inverse_transform([obs])
+            logger.info(f"Predicted observation: {obs}")
         else:
             # Step 3: transform HTTP request -> tensorflow input
-            obs = self._vae_output(action_ir, prev_state)
+            obs = self._vae_output(predictor_input.tolist())
             # Add the new observation for t+1 to the dataframe
-            obs = self.scaler.inverse_transform(np.array(action_ir+obs).reshape(1, self.df.shape[1]))
-            obs = pd.DataFrame(obs, columns=self.df.columns)
-            obs = return_to_domain(obs, self.epsilon)
-            obs = obs.iloc[0,1:].values.tolist()
+            obs = self.scaler.inverse_transform([obs])
+            
 
         # Recall true state (only used if we want to penalize deviation from true state in reward function)
         true_state = self.scaler.inverse_transform([self.data[AutonomousFed.cntr+1,:]])
-
+        logger.info(f"True state: {true_state}")
         # Step 5: Reward, terminated, truncated, info
         if self.config['specifications_set'] == 'A':
             if self.config['action_specifications'] == 'ir_omegas_fixed':
@@ -255,14 +257,15 @@ class AutonomousFed(gymnasium.Env):
 
         reward /= len(self.quarterly_dates) - self.initial_timestep
 
+        if math.isnan(reward):
+            reward = -1000.0
+
         return reward
     
-    def _vae_output(self, action_ir, prev_state):
+    def _vae_output(self, predictor_input):
         obs = requests.get(
                     "http://localhost:8000/saved_models", 
-                    json={"array": 
-                            np.array(action_ir+prev_state).reshape(1,self.df.shape[1]).tolist()
-                        }
+                    json={"array":predictor_input}
                 )
         
         # Step 4: tensorflow input -> tensorflow output
@@ -279,7 +282,7 @@ if __name__ == "__main__":
 
     specifications_set = input("Choose specifications set: {A, B, C}: ").upper()
 
-    simulator = 'RF'
+    simulator = 'VAE'
     if simulator == 'VAE':
         # Initialize Ray Serve
         serve.start()
