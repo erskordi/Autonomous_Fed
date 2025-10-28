@@ -259,7 +259,7 @@ class LinearEnvironmentSolver:
                 + coef_pi["pi_lag2"] * pi_lag2
                 + coef_pi["i_lag1"]  * i_lag1
             )
-        
+
         return df_all
 
     def __create_forecast_figure_five(self) -> Figure:
@@ -354,8 +354,8 @@ class LinearEnvironmentSolver:
         fit_df["pi_fit"]    = pi_fit.reindex(fit_df.index)
 
         # Residuals (in-sample)
-        resid_y  = (fit_df["y_actual"]  - fit_df["y_fit"])
-        resid_pi = (fit_df["pi_actual"] - fit_df["pi_fit"])
+        resid_y  = fit_df["y_actual"]  - fit_df["y_fit"]
+        resid_pi = fit_df["pi_actual"] - fit_df["pi_fit"]
 
         # Squared errors
         fit_df["se_y_svar"]  = resid_y**2
