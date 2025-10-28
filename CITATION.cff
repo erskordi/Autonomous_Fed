@@ -4,7 +4,7 @@ title: ""
 version: ""
 date-released: 
 doi: ""
-url: "https://github.com/eskordi/Autonomous_Fed"
+url: "https://github.com/erskordi/Autonomous_Fed"
 repository-code: ""
 license:
 authors:
@@ -23,7 +23,7 @@ preferred-citation:
   version:
   year: ""
   doi: ""
-  url: "https://github.com/eskordi/Autonomous_Fed"
+  url: "https://github.com/erskordi/Autonomous_Fed"
   authors:
     - family-names: "Sunder"
       given-names: "Nikhil"

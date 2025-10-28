@@ -1,0 +1,63 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "autonomous-fed"
+version = "0.0.1"
+description = "A package for simulating and analyzing the effects of monetary policy in a federal reserve context."
+authors = [
+    "Nikhil Sunder <nss106@miami.edu>",
+    "Eritokritos Skordilis <eskordilis@bus.miami.edu>"
+]
+readme = "README.md"
+repository = "https://github.com/nikhilxsunder/fedfred"
+documentation = "https://erskordi.github.io/Autonomous_Fed/"
+packages = [{include = "fedfred", from = "src"}]
+include = ["src/linear_environment/py.typed"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+keywords = []
+
+[tool.poetry.dependencies]
+python = ">=3.10, <4.0"
+matplotlib = "*"
+pandas = "*"
+statsmodels = "*"
+fedfred = "*"
+numpy = "*"
+
+
+[tool.poetry.group.dev.dependencies]
+pandas-stubs = "*"
+pytest = "*"
+pytest-cov = "*"
+pylint = "*"
+mypy = "*"
+bandit = "*"
+pip-audit = "*"
+pre-commit = "*"
+hypothesis = "*"
+tox = "*"
+pytest-mock = "*"
+ipympl = "*"
+ipywidgets = "*"
+jupyterlab-lsp = "*"
+nbdime = "*"
+
+[tool.mypy]
+files = "src/linear_environment"
+ignore_missing_imports = true
+
+[tool.pylint]
+max-line-length = 200
+disable = []
+ignore-patterns = [".*\\.pyi$"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = "src"
