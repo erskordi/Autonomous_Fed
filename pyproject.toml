@@ -11,10 +11,9 @@ authors = [
     "Eritokritos Skordilis <eskordilis@bus.miami.edu>"
 ]
 readme = "README.md"
-repository = "https://github.com/nikhilxsunder/fedfred"
-documentation = "https://erskordi.github.io/Autonomous_Fed/"
-packages = [{include = "fedfred", from = "src"}]
-include = ["src/linear_environment/py.typed"]
+repository = "https://erskordi.github.io/Autonomous_Fed/"
+packages = [{include = "autonomous_fed", from = "src"}]
+include = ["src/autonomous_fed/py.typed"]
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
@@ -27,6 +26,9 @@ pandas = "*"
 statsmodels = "*"
 fedfred = "*"
 numpy = "*"
+python-dateutil = "*"
+scikit-learn = "*"
+torch = "*"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -45,14 +47,15 @@ ipympl = "*"
 ipywidgets = "*"
 jupyterlab-lsp = "*"
 nbdime = "*"
+types-python-dateutil = "*"
 
 [tool.mypy]
-files = "src/linear_environment"
+files = "src/autonomous_fed"
 ignore_missing_imports = true
 
 [tool.pylint]
 max-line-length = 200
-disable = []
+disable = ["E0401", "R0902", "R0913", "R0917", "R0903", "R1705", "R0911", "R0912"]
 ignore-patterns = [".*\\.pyi$"]
 
 [tool.bandit]

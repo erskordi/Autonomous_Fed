@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import fedfred as fd
-from linear_environment.helpers import LinearEnvironmentHelpers
+from autonomous_fed.helpers import LinearEnvironmentHelpers
 from .objects import SVARResults
 
 class LinearEnvironmentSolver:
@@ -30,7 +30,8 @@ class LinearEnvironmentSolver:
         linear_svar (SVARResults): Fitted linear SVAR results.
         figure_five (Figure): Forecast figure five for the model.
         figure_six (Figure): Forecast figure six for the model.
-        
+        figure_seven (Figure): Squared error figure seven for the model.
+        figure_eight (Figure): Squared error figure eight for the model.
     """
     def __init__(self,
                  fred_key: str,
@@ -54,7 +55,7 @@ class LinearEnvironmentSolver:
             potential_output_id (str): FRED series ID for potential output metric. Default is "GDPPOT" ~ Potential GDP.
             interest_rate_id (str): FRED series ID for interest rate metric. Default is "FEDFUNDS" ~ Effective Federal Funds Rate.
             fred_key (str): API key for the FRED Database.
-        
+
         Returns:
             None
 
@@ -213,7 +214,7 @@ class LinearEnvironmentSolver:
 
         Returns:
             pd.DataFrame: DataFrame containing both historical and forecasted values for 'y_hat' and 'pi_hat'.
-        
+
         Raises:
             None
         """
@@ -268,29 +269,30 @@ class LinearEnvironmentSolver:
 
         Args:
             None
-        
+
         Returns:
             fig: Matplotlib figure object for the output gap forecast.
 
         Raises:
             None
         """
-        df_all = self.forecast_data
-        sub = df_all.loc[self.forward_data.index.min():]
+        with plt.ioff():
+            df_all = self.forecast_data
+            sub = df_all.loc[self.forward_data.index.min():]
 
-        index = cast(pd.PeriodIndex, sub.index)
+            index = cast(pd.PeriodIndex, sub.index)
 
-        # Output gap
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(index.to_timestamp(), sub["y"], label="Output gap (actual)")
-        ax.plot(index.to_timestamp(), sub["y_hat"], "--", label="Output gap (forecast)")
-        ax.set_title("Output Gap — Actual vs Forecast")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Percent")
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+            # Output gap
+            fig, ax = plt.subplots(figsize=(10, 4))
+            ax.plot(index.to_timestamp(), sub["y"], label="Output gap (actual)")
+            ax.plot(index.to_timestamp(), sub["y_hat"], "--", label="Output gap (forecast)")
+            ax.set_title("Output Gap — Actual vs Forecast")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Percent")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
 
-        return fig
+            return fig
 
     def __create_forecast_figure_six(self) -> Figure:
         """
@@ -298,29 +300,30 @@ class LinearEnvironmentSolver:
 
         Args:
             None
-        
+
         Returns:
             fig: Matplotlib figure object for the output gap forecast.
 
         Raises:
             None
         """
-        df_all = self.forecast_data
-        sub = df_all.loc[self.forward_data.index.min():]
+        with plt.ioff():
+            df_all = self.forecast_data
+            sub = df_all.loc[self.forward_data.index.min():]
 
-        index = cast(pd.PeriodIndex, sub.index)
+            index = cast(pd.PeriodIndex, sub.index)
 
-        # Inflation
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(index.to_timestamp(), sub["pi"], label="Inflation YoY (actual)")
-        ax.plot(index.to_timestamp(), sub["pi_hat"], "--", label="Inflation YoY (forecast)")
-        ax.set_title("Inflation — Actual vs Forecast")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Percent")
-        ax.legend()
-        ax.grid(True, alpha=0.3)
+            # Inflation
+            fig, ax = plt.subplots(figsize=(10, 4))
+            ax.plot(index.to_timestamp(), sub["pi"], label="Inflation YoY (actual)")
+            ax.plot(index.to_timestamp(), sub["pi_hat"], "--", label="Inflation YoY (forecast)")
+            ax.set_title("Inflation — Actual vs Forecast")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Percent")
+            ax.legend()
+            ax.grid(True, alpha=0.3)
 
-        return fig
+            return fig
 
     def __create_squared_errors_data(self):
         """
@@ -372,26 +375,26 @@ class LinearEnvironmentSolver:
 
         Args:
             None
-        
+
         Returns:
             Figure: Matplotlib figure object for the in-sample fit.
 
         Raises:
             None
         """
+        with plt.ioff():
+            fit_df = self.__create_squared_errors_data()
 
-        fit_df = self.__create_squared_errors_data()
+            # Figure 4: Output gap fit — squared errors
+            fig, ax = plt.subplots(figsize=(10, 4))
+            ax.plot(fit_df.index.to_timestamp(), fit_df["se_y_svar"], color="red", label="SVAR", linewidth=1.5)
+            ax.set_title(f"Figure 4 Replica: Output Gap Fit — Squared Errors ({fit_df.index.min()}-{fit_df.index.max()})")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Squared error")
+            ax.grid(True, alpha=0.3)
+            ax.legend()
 
-        # Figure 4: Output gap fit — squared errors
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(fit_df.index.to_timestamp(), fit_df["se_y_svar"], color="red", label="SVAR", linewidth=1.5)
-        ax.set_title(f"Figure 4 Replica: Output Gap Fit — Squared Errors ({fit_df.index.min()}-{fit_df.index.max()})")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Squared error")
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-
-        return fig
+            return fig
 
     def __create_se_figure_eight(self) -> Figure:
         """
@@ -406,16 +409,16 @@ class LinearEnvironmentSolver:
         Raises:
             None
         """
+        with plt.ioff():
+            fit_df = self.__create_squared_errors_data()
 
-        fit_df = self.__create_squared_errors_data()
+            # Figure 5: Inflation fit — squared errors
+            fig, ax = plt.subplots(figsize=(10, 4))
+            ax.plot(fit_df.index.to_timestamp(), fit_df["se_pi_svar"], color="red", label="SVAR", linewidth=1.5)
+            ax.set_title(f"Figure 5 Replica: Inflation Fit — Squared Errors ({fit_df.index.min()}-{fit_df.index.max()})")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Squared error")
+            ax.grid(True, alpha=0.3)
+            ax.legend()
 
-        # Figure 5: Inflation fit — squared errors
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(fit_df.index.to_timestamp(), fit_df["se_pi_svar"], color="red", label="SVAR", linewidth=1.5)
-        ax.set_title(f"Figure 5 Replica: Inflation Fit — Squared Errors ({fit_df.index.min()}-{fit_df.index.max()})")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Squared error")
-        ax.grid(True, alpha=0.3)
-        ax.legend()
-
-        return fig
+            return fig

@@ -43,7 +43,7 @@ class SVARResults:
 
         Args:
             None
-        
+
         Returns:
             str: Summary string.
 
@@ -73,7 +73,7 @@ class SVARResults:
         Raises:
             None
 
-        Note: 
+        Note:
             The return table should be wrapped in a markdown environment for proper display.
         """
 
@@ -144,7 +144,7 @@ class SVARResults:
 
         Raises:
             None
-        
+
         Note:
             The return string should be wrapped in a markdown environment for proper display.
         """

@@ -26,7 +26,7 @@ class LinearEnvironmentHelpers:
             pd.Series: A float Series with DatetimeIndex and the given `name`.
 
         Raises:
-            TypeError: If the input is neither a pd.Series nor a pd.DataFrame. 
+            TypeError: If the input is neither a pd.Series nor a pd.DataFrame.
         """
         if isinstance(x, pd.Series):
             s = x.copy()
