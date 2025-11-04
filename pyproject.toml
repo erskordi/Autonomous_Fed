@@ -29,6 +29,7 @@ numpy = "*"
 python-dateutil = "*"
 scikit-learn = "*"
 torch = "*"
+pyrenn = "*"
 
 
 [tool.poetry.group.dev.dependencies]

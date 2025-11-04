@@ -77,12 +77,6 @@ class LinearEnvironmentSolver:
             datetime.today()
         )
         self.linear_svar: SVARResults = self.__fit_linear_svar(self.historical_data)
-        self.forecast_data: pd.DataFrame = self.__forecast_output()
-        self.figure_five: Figure = self.__create_forecast_figure_five()
-        self.figure_six: Figure = self.__create_forecast_figure_six()
-        self.squared_errors_data: pd.DataFrame = self.__create_squared_errors_data()
-        self.figure_seven: Figure = self.__create_se_figure_seven()
-        self.figure_eight: Figure = self.__create_se_figure_eight()
     # Dunder Methods
 
     # Private Methods
@@ -205,7 +199,8 @@ class LinearEnvironmentSolver:
 
         return df
 
-    def __forecast_output(self) -> pd.DataFrame:
+    @property
+    def forecast_data(self) -> pd.DataFrame:
         """
         Forecast future values using the fitted models.
 
@@ -263,7 +258,8 @@ class LinearEnvironmentSolver:
 
         return df_all
 
-    def __create_forecast_figure_five(self) -> Figure:
+    @property
+    def figure_five(self) -> Figure:
         """
         Create forecast figure five for the model.
 
@@ -294,7 +290,8 @@ class LinearEnvironmentSolver:
 
             return fig
 
-    def __create_forecast_figure_six(self) -> Figure:
+    @property
+    def figure_six(self) -> Figure:
         """
         Create forecast figures six for the model.
 
@@ -325,7 +322,8 @@ class LinearEnvironmentSolver:
 
             return fig
 
-    def __create_squared_errors_data(self):
+    @property
+    def squared_errors_data(self) -> pd.DataFrame:
         """
         Create a DataFrame to hold squared errors for the model.
 
@@ -369,7 +367,8 @@ class LinearEnvironmentSolver:
 
         return fit_df
 
-    def __create_se_figure_seven(self) -> Figure:
+    @property
+    def figure_seven(self) -> Figure:
         """
         Create squared error figure seven for the model.
 
@@ -383,8 +382,9 @@ class LinearEnvironmentSolver:
             None
         """
         with plt.ioff():
-            fit_df = self.__create_squared_errors_data()
+            fit_df = self.squared_errors_data
 
+            assert isinstance(fit_df.index, pd.PeriodIndex)
             # Figure 4: Output gap fit — squared errors
             fig, ax = plt.subplots(figsize=(10, 4))
             ax.plot(fit_df.index.to_timestamp(), fit_df["se_y_svar"], color="red", label="SVAR", linewidth=1.5)
@@ -396,7 +396,8 @@ class LinearEnvironmentSolver:
 
             return fig
 
-    def __create_se_figure_eight(self) -> Figure:
+    @property
+    def figure_eight(self) -> Figure:
         """
         Create squared error figure eight for the model.
 
@@ -410,7 +411,9 @@ class LinearEnvironmentSolver:
             None
         """
         with plt.ioff():
-            fit_df = self.__create_squared_errors_data()
+            fit_df = self.squared_errors_data
+
+            assert isinstance(fit_df.index, pd.PeriodIndex)
 
             # Figure 5: Inflation fit — squared errors
             fig, ax = plt.subplots(figsize=(10, 4))

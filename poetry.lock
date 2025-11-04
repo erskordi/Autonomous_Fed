@@ -4196,6 +4196,20 @@ docs = ["furo (>=2025.9.25)", "sphinx-autodoc-typehints (>=3.5.1)"]
 testing = ["covdefaults (>=2.3)", "pytest (>=8.4.2)", "pytest-cov (>=7)", "pytest-mock (>=3.15.1)", "setuptools (>=80.9)"]
 
 [[package]]
+name = "pyrenn"
+version = "0.1"
+description = "A recurrent neural network toolbox for Python and Matlab."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pyrenn-0.1.tar.gz", hash = "sha256:4a55027cdbfd3af2d401331569d6fd1bae5abfe7db4870d8a52f21a2edaf10bd"},
+]
+
+[package.dependencies]
+numpy = "*"
+
+[[package]]
 name = "pytest"
 version = "8.4.2"
 description = "pytest: simple powerful testing with Python"
@@ -5778,4 +5792,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <4.0"
-content-hash = "d10fe7184282d5775621d5a6f5557e597e4ec55696a867fcd514a90190f5052b"
+content-hash = "c3de641f585d9a90f40aa60cdb56b4297961d3da9a8f1e22055688ca78ecdaac"
