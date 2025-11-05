@@ -13,10 +13,11 @@ class LinearEnvironmentHelpers:
     """
     Helper functions for the linear environment.
     """
+    # Static Methods
     @staticmethod
     def to_series(x: Union[pd.Series, pd.DataFrame], name: str) -> pd.Series:
         """
-        Accepts a Series or a DataFrame with 'date'/'value' columns (fedfred style) and returns a float Series with DatetimeIndex and the given `name`.
+        Accepts a Series or a DataFrame with 'date' and 'value' columns (fedfred style) and returns a float Series with DatetimeIndex and the given name.
 
         Args:
             x (pd.Series | pd.DataFrame): Input data to be converted.

@@ -36,7 +36,7 @@ class SVARResults:
     x_pi: pd.DataFrame
     resid_y: pd.Series
     resid_pi: pd.Series
-
+    # Public Methods
     def print_results(self) -> str:
         """
         Print a summary of the SVAR results.

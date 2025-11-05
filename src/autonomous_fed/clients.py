@@ -32,7 +32,12 @@ class LinearEnvironmentSolver:
         figure_six (Figure): Forecast figure six for the model.
         figure_seven (Figure): Squared error figure seven for the model.
         figure_eight (Figure): Squared error figure eight for the model.
+
+    Methods:
+        create_econometric_dataset(start_date: str | datetime, end_date: str | datetime) -> pd.DataFrame:
+            Create econometric dataset from FRED data.
     """
+    # Dunder Methods
     def __init__(self,
                  fred_key: str,
                  start_date: Union[str, datetime] = "1987-07-01",
@@ -71,14 +76,12 @@ class LinearEnvironmentSolver:
         self.real_output_id: str = real_output_id
         self.potential_output_id: str = potential_output_id
         self.interest_rate_id: str = interest_rate_id
-        self.historical_data: pd.DataFrame = self.__create_econometric_dataset(self.start_date, self.end_date)
-        self.forward_data: pd.DataFrame = self.__create_econometric_dataset(
+        self.historical_data: pd.DataFrame = self.create_econometric_dataset(self.start_date, self.end_date)
+        self.forward_data: pd.DataFrame = self.create_econometric_dataset(
             LinearEnvironmentHelpers.bump_date_by_one_period(self.end_date, self.frequency),
             datetime.today()
         )
         self.linear_svar: SVARResults = self.__fit_linear_svar(self.historical_data)
-    # Dunder Methods
-
     # Private Methods
     def __fit_linear_svar(self, df: pd.DataFrame, alpha_drop: float = 0.10) -> SVARResults:
         """
@@ -133,8 +136,8 @@ class LinearEnvironmentSolver:
             resid_y=resid_y,
             resid_pi=resid_pi,
         )
-
-    def __create_econometric_dataset(self, start_date: Union[str, datetime], end_date: Union[str, datetime]) -> pd.DataFrame:
+    # Public Methods
+    def create_econometric_dataset(self, start_date: Union[str, datetime], end_date: Union[str, datetime]) -> pd.DataFrame:
         """
         Create a synthetic dataset for testing the linear SVAR fitting function.
 
@@ -198,7 +201,7 @@ class LinearEnvironmentSolver:
         df.index = pd.PeriodIndex(df.index, freq=pandas_frequency) # Use coerced frequency for PeriodIndex
 
         return df
-
+    # Properties
     @property
     def forecast_data(self) -> pd.DataFrame:
         """

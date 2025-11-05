@@ -1,5 +1,5 @@
 """
-This module initializes the linear_environment package.
+This module initializes the autonomous_fed package.
 
 Imports:
     - LinearEnvironmentSolver from clients
