@@ -2,8 +2,8 @@
 This module initializes the autonomous_fed package.
 
 Imports:
-    - LinearEnvironmentSolver from clients
-    - LinearEnvironmentHelpers from helpers
+    - EnvironmentSolver from clients
+    - EnvironmentHelpers from helpers
     - SVARResults from objects
 """
 
@@ -13,13 +13,13 @@ from . import clients
 from . import helpers
 from . import objects
 
-from .clients import LinearEnvironmentSolver
-from .helpers import LinearEnvironmentHelpers
+from .clients import EnvironmentSolver
+from .helpers import EnvironmentHelpers
 from .objects import SVARResults
 
 __all__ = [
-    "LinearEnvironmentSolver",
-    "LinearEnvironmentHelpers",
+    "EnvironmentSolver",
+    "EnvironmentHelpers",
     "SVARResults",
     "__title__",
     "__version__",

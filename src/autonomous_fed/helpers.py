@@ -1,6 +1,7 @@
 """
-Helper functions for the linear environment.
+Helper functions for the environment.
 """
+
 from datetime import datetime, timedelta
 from typing import Union, Tuple
 from dateutil.relativedelta import relativedelta
@@ -9,9 +10,9 @@ import statsmodels.api as sm #pragma: no cover
 import numpy as np
 import fedfred as fd
 
-class LinearEnvironmentHelpers:
+class EnvironmentHelpers:
     """
-    Helper functions for the linear environment.
+    Helper functions for the environment.
     """
     # Static Methods
     @staticmethod
@@ -154,13 +155,7 @@ class LinearEnvironmentHelpers:
     @staticmethod
     def get_recursive_lag(df: pd.DataFrame, t: Union[pd.Period, pd.Timestamp, int], col: str, k: int) -> float:
         """
-        Use forecast if available, else actual, at lag k.
-
-        This helper method returns the value of variable `col` at lag `k`
-        relative to time period `t`. If a forecasted value (`<col>_hat`) exists
-        and is not NaN, it is used; otherwise, the corresponding actual value
-        (`<col>`) is returned. This logic enables recursive or dynamic forecasts
-        where previous forecasted values should be used once available.
+        Get the lagged value of `col` at time `t - k`, using forecasted value if available.
 
         Args:
             df (pd.DataFrame): DataFrame containing both actual and forecasted values.

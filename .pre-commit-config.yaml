@@ -19,7 +19,10 @@ repos:
         entry: poetry run pylint
         language: system
         types: [python]
-        args: ["--disable=E0401,R0902,R0913,R0917,R0903,R1705,R0911,R0912"]
+        args:
+          [
+            "--disable=E0401,R0902,R0913,R0917,R0903,R1705,R0911,R0912,R0914,R0915,R1735,W0222",
+          ]
         files: ^src/
 
       - id: mypy
