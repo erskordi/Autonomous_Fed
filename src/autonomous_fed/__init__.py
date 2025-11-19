@@ -11,10 +11,11 @@ from autonomous_fed.__about__ import __title__, __version__, __author__, __descr
 
 from .clients import EnvironmentSolver
 from .helpers import EnvironmentHelpers
-from .objects import SVARResults, MapMinMax
+from .objects import SVARResults
 from .optimizers import LevenbergMarquardt
 from .initializers import nguyen_widrow_
 from .networks import SingleHiddenLayerNet
+from .scalers import MapMinMax
 
 __all__ = [
     "EnvironmentSolver",

@@ -10,8 +10,8 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import fedfred as fd
-from autonomous_fed.clients import LinearEnvironmentSolver
-from autonomous_fed.helpers import LinearEnvironmentHelpers
+from autonomous_fed.clients import EnvironmentSolver
+from autonomous_fed.helpers import EnvironmentHelpers
 from autonomous_fed.objects import SVARResults
 
 class TestLinearEnvironmentHelpers:

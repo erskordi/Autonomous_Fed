@@ -2,13 +2,11 @@
 Module defining data structures for the linear SVAR environment.
 """
 
-from typing import Optional
 from dataclasses import dataclass
 import statsmodels.api as sm #pragma: no cover
 from statsmodels.stats.stattools import durbin_watson #pragma: no cover
 from statsmodels.stats.diagnostic import acorr_breusch_godfrey #pragma: no cover
 import pandas as pd
-import numpy as np
 
 @dataclass(frozen=True)
 class SVARResults:
@@ -157,81 +155,3 @@ class SVARResults:
         """ # pylint: disable=line-too-long
 
         return pi_t_eq_str
-
-@dataclass
-class MapMinMax:
-    """
-    Min-max scaler that maps data to a specified range.
-
-    Attributes:
-        in_min (np.ndarray): Minimum values for each feature in the input data.
-        in_max (np.ndarray): Maximum values for each feature in the input data.
-        out_lo (float): Lower bound of the output range.
-        out_hi (float): Upper bound of the output range.
-
-    Methods:
-        fit: Compute the min and max values for scaling.
-        transform: Scale the input data to the specified range.
-        inverse_transform: Revert the scaled data back to the original range.
-    """
-    in_min: Optional[np.ndarray] = None
-    in_max: Optional[np.ndarray] = None
-    out_lo: float = -1.0
-    out_hi: float =  1.0
-    # precomputed
-    scale_: Optional[np.ndarray] = None
-    mid_:   Optional[np.ndarray] = None
-
-    def fit(self, x: np.ndarray) -> "MapMinMax":
-        """
-        Fit the scaler to the data.
-
-        Args:
-            x (np.ndarray): Input data to compute min and max values.
-
-        Returns:
-            MapMinMax: The fitted scaler instance.
-
-        Raises:
-            ValueError: If x is empty or not a 2D array.
-        """
-
-        self.in_min = np.nanmin(x, axis=0)
-        self.in_max = np.nanmax(x, axis=0)
-        # handle constant columns robustly
-        rng = np.where((self.in_max - self.in_min) == 0.0, 1.0, (self.in_max - self.in_min)) # type: ignore[operator]
-        self.scale_ = (self.out_hi - self.out_lo) / rng
-        self.mid_   = (self.out_hi + self.out_lo)/2.0 - self.scale_ * (self.in_max + self.in_min)/2.0 # type: ignore[operator]
-        return self
-
-    def transform(self, x: np.ndarray) -> np.ndarray:
-        """
-        Scale the input data to the specified range.
-
-        Args:
-            x (np.ndarray): Input data to be scaled.
-
-        Returns:
-            np.ndarray: Scaled data.
-
-        Raises:
-            ValueError: If the scaler has not been fitted.
-        """
-        return self.scale_ * x + self.mid_
-
-    def inverse_transform(self, xs: np.ndarray) -> np.ndarray:
-        """
-        Revert the scaled data back to the original range.
-
-        Args:
-            xs (np.ndarray): Scaled data to be reverted.
-
-        Returns:
-            np.ndarray: Data in the original scale.
-
-        Raises:
-            ValueError: If the scaler has not been fitted.
-        """
-        # invert: x = (xs - mid_) / scale_
-        inv_scale = np.where(self.scale_ == 0.0, 1.0, self.scale_) # type: ignore[arg-type]
-        return (xs - self.mid_) / inv_scale

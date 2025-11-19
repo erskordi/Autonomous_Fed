@@ -17,7 +17,7 @@ from torch.utils.data import TensorDataset
 from .helpers import EnvironmentHelpers
 from .objects import SVARResults
 from .optimizers import LevenbergMarquardt
-from .objects import MapMinMax
+from .scalers import MapMinMax
 from .networks import SingleHiddenLayerNet
 
 class EnvironmentSolver:
@@ -98,10 +98,10 @@ class EnvironmentSolver:
             datetime.today()
         )
         self.linear_svar: SVARResults = self.fit_linear_svar(self.historical_data)
-        self.device: torch.device = self.__device_settr()
-        self.dtype: torch.dtype = self.__dtype_settr()
         self.override_device: Optional[str] = override_device
         self.override_dtype: Optional[torch.dtype] = override_dtype
+        self.device: torch.device = self.__device_settr()
+        self.dtype: torch.dtype = self.__dtype_settr()
 
     # Private Methods
     def __device_settr(self) -> torch.device:
@@ -120,8 +120,8 @@ class EnvironmentSolver:
         device = None
 
         if self.override_device is not None:
-            if self.override_device not in ["cpu", "cuda", "mps"]:
-                raise ValueError("override must be one of 'cpu', 'cuda', or 'mps'")
+            if self.override_device not in ["cpu", "cuda", "mps", None]:
+                raise ValueError("override device if specified, must be one of 'cpu', 'cuda', or 'mps'")
             device = torch.device(self.override_device)
         elif torch.cuda.is_available():
             device = torch.device("cuda")
@@ -292,7 +292,6 @@ class EnvironmentSolver:
         Args:
             df (pd.DataFrame): DataFrame containing the time series data.
             target_col (str): Name of the target column to predict. Must be either 'y' or 'pi'.
-            dtype (torch.dtype): Desired data type for the tensors.
             holdout_frac (float, optional): Fraction of data to hold out for validation. Default is 0.15.
             feature_range (Tuple[float, float], optional): Desired range of transformed features. Default is (-1.0, 1.0).
 
@@ -340,36 +339,56 @@ class EnvironmentSolver:
 
         x_df = data[feature_cols]
         mask = x_df.notna().all(axis=1) & y_series.notna()
-        x = x_df[mask].values.astype(np.float64)
-        y = y_series[mask].values.astype(np.float64).reshape(-1, 1)
+
+        # still build via NumPy, then convert once to torch
+        x_np = x_df[mask].values.astype(np.float64)
+        y_np = y_series[mask].values.astype(np.float64).reshape(-1, 1)
 
         # deterministic “last 15%” validation split
-        n_total = len(x)
+        n_total = len(x_np)
         n_hold  = int(np.floor(holdout_frac * n_total))
         n_train = n_total - n_hold
-        xtr_raw, xva_raw = x[:n_train], x[n_train:]
-        ytr_raw, yva_raw = y[:n_train], y[n_train:]
 
-        # fit scalers on TRAIN ONLY
-        x_scaler = MapMinMax(out_lo=feature_range[0], out_hi=feature_range[1]).fit(xtr_raw)
-        y_scaler = MapMinMax(out_lo=feature_range[0], out_hi=feature_range[1]).fit(ytr_raw)
+        xtr_raw_np, xva_raw_np = x_np[:n_train], x_np[n_train:]
+        ytr_raw_np, yva_raw_np = y_np[:n_train], y_np[n_train:]
 
-        xtr = x_scaler.transform(xtr_raw).astype(np.float64)
-        xva = x_scaler.transform(xva_raw).astype(np.float64)
-        ytr = y_scaler.transform(ytr_raw).astype(np.float64)
-        yva = y_scaler.transform(yva_raw).astype(np.float64)
+        # --- CONVERT TO TENSORS BEFORE SCALING (torch-native path) ---
+        xtr_raw = torch.as_tensor(xtr_raw_np, dtype=self.dtype)
+        xva_raw = torch.as_tensor(xva_raw_np, dtype=self.dtype)
+        ytr_raw = torch.as_tensor(ytr_raw_np, dtype=self.dtype)
+        yva_raw = torch.as_tensor(yva_raw_np, dtype=self.dtype)
 
-        train_ds = TensorDataset(torch.from_numpy(xtr).to(self.dtype), torch.from_numpy(ytr).to(self.dtype))
-        val_ds   = TensorDataset(torch.from_numpy(xva).to(self.dtype), torch.from_numpy(yva).to(self.dtype))
+        # fit scalers on TRAIN ONLY (tensors in, tensors out)
+        x_scaler = MapMinMax(out_lo=feature_range[0],
+                            out_hi=feature_range[1]).fit(xtr_raw)
+        y_scaler = MapMinMax(out_lo=feature_range[0],
+                            out_hi=feature_range[1]).fit(ytr_raw)
+
+        # scaled tensors (no .astype, no from_numpy)
+        xtr = x_scaler.transform(xtr_raw)  # torch.Tensor
+        xva = x_scaler.transform(xva_raw)  # torch.Tensor
+        ytr = y_scaler.transform(ytr_raw)  # torch.Tensor
+        yva = y_scaler.transform(yva_raw)  # torch.Tensor
+
+        # ensure dtype
+        xtr = xtr.to(self.dtype)
+        xva = xva.to(self.dtype)
+        ytr = ytr.to(self.dtype)
+        yva = yva.to(self.dtype)
+
+        # TensorDatasets directly from tensors
+        train_ds = TensorDataset(xtr, ytr)
+        val_ds   = TensorDataset(xva, yva)
 
         meta = {
             "feature_cols": feature_cols,
             "x_scaler": x_scaler,
             "y_scaler": y_scaler,
+            # raw *tensors* now, not NumPy
             "xtr_raw": xtr_raw,
             "xva_raw": xva_raw,
             "ytr_raw": ytr_raw,
-            "yva_raw": yva_raw
+            "yva_raw": yva_raw,
         }
         return train_ds, val_ds, meta
 
@@ -444,6 +463,38 @@ class EnvironmentSolver:
 
         return best["val"], model
 
+    @torch.no_grad()
+    def predict(self, model: nn.Module, x_raw: torch.Tensor, x_scaler: MapMinMax, y_scaler: MapMinMax) -> np.ndarray:
+        """
+        Predict using the model and inverse transform the output to the original scale.
+
+        Args:
+            model (nn.Module): Trained PyTorch model.
+            x_raw (torch.Tensor): Raw input features (unscaled), shape (N, n_in).
+            x_scaler (MapMinMax): Scaler for input features.
+            y_scaler (MapMinMax): Scaler for output.
+
+        Returns:
+            np.ndarray: Predicted values in the original scale (1D array for convenience).
+
+        Raises:
+            None
+        """
+        # ensure proper dtype/device
+        x_raw = x_raw.to(dtype=self.dtype, device=self.device)
+
+        # scale inputs (torch-native)
+        x_s = x_scaler.transform(x_raw) # torch.Tensor
+
+        # model forward
+        model = model.to(dtype=self.dtype, device=self.device)
+        yhat_s = model(x_s) # scaled predictions (tensor)
+        # inverse scale
+        yhat = y_scaler.inverse_transform(yhat_s) # tensor in original scale
+
+        # return NumPy for plots/etc.
+        return yhat.detach().cpu().numpy().reshape(-1)
+
     def search_hidden_units_lm(self,
                                df: pd.DataFrame,
                                target_col: str,
@@ -503,30 +554,6 @@ class EnvironmentSolver:
                     "meta": best_run[2] # type: ignore[dict-item]
                 }
         return overall # type: ignore[return-value]
-
-    @torch.no_grad()
-    def predict_inverse(self, model: nn.Module, x_raw: np.ndarray, x_scaler: MapMinMax, y_scaler: MapMinMax,) -> np.ndarray:
-        """
-        Predict using the model and inverse transform the output to the original scale.
-
-        Args:
-            model (nn.Module): Trained PyTorch model.
-            x_raw (np.ndarray): Raw input features.
-            x_scaler (MapMinMax): Scaler for input features.
-            y_scaler (MapMinMax): Scaler for output.
-
-        Returns:
-            np.ndarray: Predicted values in the original scale.
-
-        Raises:
-            None
-        """
-        xs = x_scaler.transform(x_raw).astype(np.float64)
-        x_tensor = torch.from_numpy(xs).to(dtype=self.dtype, device=self.device)
-        yhat_s = model.to(dtype=self.dtype, device=self.device)(x_tensor)
-        yhat_s_cpu = yhat_s.detach().to("cpu").numpy()
-        yhat = y_scaler.inverse_transform(yhat_s_cpu)
-        return yhat
     # Properties
     @property
     def forecast_data(self) -> pd.DataFrame:

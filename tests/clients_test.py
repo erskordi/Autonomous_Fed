@@ -9,8 +9,8 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import fedfred as fd
-from autonomous_fed.clients import LinearEnvironmentSolver
-from autonomous_fed.helpers import LinearEnvironmentHelpers
+from autonomous_fed.clients import EnvironmentSolver
+from autonomous_fed.helpers import EnvironmentHelpers
 from autonomous_fed.objects import SVARResults
 
 class TestLinearEnvironmentSolver:
@@ -18,10 +18,10 @@ class TestLinearEnvironmentSolver:
     Unit tests for the LinearEnvironmentSolver class.
     """
 
-    @patch('autonomous_fed.clients.LinearEnvironmentSolver.create_econometric_dataset')
+    @patch('autonomous_fed.clients.EnvironmentSolver.create_econometric_dataset')
     def test_init(self, mock_create_dataset):
         """
-        test_init: Test the initialization of LinearEnvironmentSolver.
+        test_init: Test the initialization of EnvironmentSolver.
         """
         # Mock the dataset creation to return a sample DataFrame
         mock_create_dataset.return_value = pd.DataFrame({
@@ -30,8 +30,8 @@ class TestLinearEnvironmentSolver:
             'i': [0.05, 0.06, 0.07]
         })
 
-        solver = LinearEnvironmentSolver("test_key")
-        assert isinstance(solver, LinearEnvironmentSolver)
+        solver = EnvironmentSolver("test_key")
+        assert isinstance(solver, EnvironmentSolver)
         assert solver.start_date == "1987-07-01"
         assert solver.end_date == "2007-06-30"
         assert solver.frequency == "Q"
@@ -73,11 +73,11 @@ class TestLinearEnvironmentSolver:
             return model, x_data
         mock_drop_lag.side_effect = mock_drop_side_effect
 
-        solver = LinearEnvironmentSolver("test_key")
+        solver = EnvironmentSolver("test_key")
         # Clear any calls from initialization
         mock_drop_lag.reset_mock()
 
-        result = solver._LinearEnvironmentSolver__fit_linear_svar(valid_df)
+        result = solver._EnvironmentSolver__fit_linear_svar(valid_df)
 
         # Verify return type and structure
         assert isinstance(result, SVARResults)
@@ -108,7 +108,7 @@ class TestLinearEnvironmentSolver:
         })
 
         with pytest.raises(AssertionError, match="df must have columns: 'pi', 'y', 'i'"):
-            solver._LinearEnvironmentSolver__fit_linear_svar(incomplete_df1)
+            solver.EnvironmentSolver__fit_linear_svar(incomplete_df1)
 
         # Test 3: Missing columns - missing 'pi'
         incomplete_df2 = pd.DataFrame({
