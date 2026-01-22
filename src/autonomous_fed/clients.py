@@ -6,7 +6,7 @@ from typing import Union, cast, Optional, Tuple, Dict, Any
 from datetime import datetime
 import random
 import pandas as pd
-import statsmodels.api as sm #pragma: no cover
+import statsmodels.api as sm
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -340,9 +340,9 @@ class EnvironmentSolver:
         x_df = data[feature_cols]
         mask = x_df.notna().all(axis=1) & y_series.notna()
 
-        # still build via NumPy, then convert once to torch
-        x_np = x_df[mask].values.astype(np.float64)
-        y_np = y_series[mask].values.astype(np.float64).reshape(-1, 1)
+        # Build via NumPy arrays with stable typing for mypy
+        x_np = x_df.loc[mask].to_numpy(dtype=np.float64)
+        y_np = y_series.loc[mask].to_numpy(dtype=np.float64).reshape(-1, 1)
 
         # deterministic “last 15%” validation split
         n_total = len(x_np)
@@ -554,6 +554,7 @@ class EnvironmentSolver:
                     "meta": best_run[2] # type: ignore[dict-item]
                 }
         return overall # type: ignore[return-value]
+
     # Properties
     @property
     def forecast_data(self) -> pd.DataFrame:

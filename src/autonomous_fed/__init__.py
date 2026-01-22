@@ -7,7 +7,7 @@ Imports:
     - SVARResults from objects
 """
 
-from autonomous_fed.__about__ import __title__, __version__, __author__, __description__, __url__
+from .__about__ import __title__, __version__, __author__, __description__, __url__
 
 from .clients import EnvironmentSolver
 from .helpers import EnvironmentHelpers

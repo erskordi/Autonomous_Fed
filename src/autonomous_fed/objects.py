@@ -3,9 +3,9 @@ Module defining data structures for the linear SVAR environment.
 """
 
 from dataclasses import dataclass
-import statsmodels.api as sm #pragma: no cover
-from statsmodels.stats.stattools import durbin_watson #pragma: no cover
-from statsmodels.stats.diagnostic import acorr_breusch_godfrey #pragma: no cover
+import statsmodels.api as sm
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.diagnostic import acorr_breusch_godfrey
 import pandas as pd
 
 @dataclass(frozen=True)
