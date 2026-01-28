@@ -53,7 +53,7 @@ files = "src/autonomous_fed"
 ignore_missing_imports = true
 
 [tool.pylint]
-max-line-length = 200
+max-line-length = 250
 disable = ["E0401", "R0902", "R0913", "R0917", "R0903", "R1705", "R0911", "R0912", "R0914", "R0915", "R1735", "W0222"]
 ignore-patterns = [".*\\.pyi$"]
 

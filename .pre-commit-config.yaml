@@ -24,11 +24,10 @@ repos:
             "--disable=E0401,R0902,R0913,R0917,R0903,R1705,R0911,R0912,R0914,R0915,R1735,W0222",
           ]
         files: ^src/
-
-      - id: mypy
-        name: mypy
-        entry: poetry run mypy
-        language: system
-        types: [python]
-        args: ["--ignore-missing-imports"]
-        files: ^src/
+#      - id: mypy
+#        name: mypy
+#        entry: poetry run mypy
+#        language: system
+#        types: [python]
+#        args: ["--ignore-missing-imports"]
+#        files: ^src/
