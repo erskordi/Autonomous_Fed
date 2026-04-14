@@ -48,9 +48,10 @@ This checklist contains the necessary steps to complete prior to artifact publis
 - [ ] Basic root markdown
 - [ ] Final Paper
     - Bibtex
-- [ ] CFF file
+- [x] CFF file
 - [ ] CI/Workflows
 - [ ] .github repo enhancements
+- [ ] Final structure
 - [ ] DOI minting
 
 
