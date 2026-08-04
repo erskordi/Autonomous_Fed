@@ -1,3 +1,7 @@
+<div align="center">
+    <img src="https://raw.githubusercontent.com/erskordi/Autonomous_Fed/src/assets/exported/autofed_banner.png"  alt="autofed Logo">
+</div>
+
 # Autonomous Fed Artifact Repository Checklist
 
 This checklist contains the necessary steps to complete prior to artifact publishing.
