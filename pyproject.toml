@@ -1,58 +1,58 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
+[project]
 name = "autonomous-fed"
 version = "0.0.1"
 description = "A package for simulating and analyzing the effects of monetary policy in a federal reserve context."
-authors = [
-    "Nikhil Sunder <nss106@miami.edu>",
-    "Eritokritos Skordilis <eskordilis@bus.miami.edu>"
-]
 readme = "README.md"
-repository = "https://erskordi.github.io/Autonomous_Fed/"
-packages = [{include = "autonomous_fed", from = "src"}]
-include = ["src/autonomous_fed/py.typed"]
+requires-python = ">=3.10,<4.0"
+authors = [
+    { name = "Nikhil Sunder", email = "nss106@miami.edu" },
+    { name = "Eritokritos Skordilis", email = "eskordilis@bus.miami.edu" },
+]
+keywords = []
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
-keywords = []
+dependencies = [
+    "torch",
+    "fedfred",
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "ipympl",
+    "ipywidgets",
+    "jupyterlab-lsp",
+    "nbdime",
+    "types-python-dateutil",
+    "statsmodels",
+    "pymc",
+    "pytensor",
+    "gymnasium",
+    "stable-baselines3",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.10, <4.0"
-torch = "*"
-fedfred = "*"
-pandas = "*"
-numpy = "*"
-matplotlib = "*"
-ipympl = "*"
-ipywidgets = "*"
-jupyterlab-lsp = "*"
-nbdime = "*"
-types-python-dateutil = "*"
-statsmodels = "*"
-pymc = "*"
-pytensor = "*"
-gymnasium = "*"
-stable-baselines3 = "*"
+[project.urls]
+Repository = "https://erskordi.github.io/Autonomous_Fed/"
 
-[tool.poetry.group.dev.dependencies]
-pandas-stubs = "*"
-pytest = "*"
-pytest-cov = "*"
-pylint = "*"
-mypy = "*"
-bandit = "*"
-pip-audit = "*"
-pre-commit = "*"
-hypothesis = "*"
-pytest-mock = "*"
-ipympl = "*"
-ipywidgets = "*"
-jupyterlab-lsp = "*"
-nbdime = "*"
-types-python-dateutil = "*"
+[dependency-groups]
+dev = [
+    "pandas-stubs",
+    "pytest",
+    "pytest-cov",
+    "pylint",
+    "mypy",
+    "bandit",
+    "pip-audit",
+    "pre-commit",
+    "hypothesis",
+    "pytest-mock",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/autonomous_fed"]
 
 [tool.mypy]
 files = "src/autonomous_fed"
