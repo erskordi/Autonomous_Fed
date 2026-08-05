@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "autonomous-fed"
+name = "autofed"
 version = "0.0.1"
 description = "A package for simulating and analyzing the effects of monetary policy in a federal reserve context."
 readme = "README.md"
@@ -53,10 +53,10 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/autonomous_fed"]
+packages = ["src/autofed"]
 
 [tool.mypy]
-files = "src/autonomous_fed"
+files = "src/autofed"
 ignore_missing_imports = true
 
 [tool.pylint]
