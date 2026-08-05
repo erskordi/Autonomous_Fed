@@ -18,6 +18,7 @@ classifiers = [
 ]
 dependencies = [
     "torch",
+    "torchrl",
     "fedfred",
     "pandas",
     "numpy",
