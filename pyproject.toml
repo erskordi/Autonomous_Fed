@@ -7,7 +7,7 @@ name = "autofed"
 version = "0.0.1"
 description = "A package for simulating and analyzing the effects of monetary policy in a federal reserve context."
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
+requires-python = ">=3.12,<4.0"
 authors = [
     { name = "Nikhil Sunder", email = "nss106@miami.edu" },
     { name = "Eritokritos Skordilis", email = "eskordilis@bus.miami.edu" },
@@ -29,10 +29,7 @@ dependencies = [
     "nbdime",
     "types-python-dateutil",
     "statsmodels",
-    "pymc",
-    "pytensor",
-    "gymnasium",
-    "stable-baselines3",
+    "cultivars>=1.0.0a1",
 ]
 
 [project.urls]
