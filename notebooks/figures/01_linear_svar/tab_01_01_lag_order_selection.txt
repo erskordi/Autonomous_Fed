@@ -1,0 +1,17 @@
+                              Lag order selection
+================================================================================
+Observations:                       74  Maximum lags:                        6
+Consensus:                           2
+--------------------------------------------------------------------------------
+p          AIC        BIC       HQIC       FPE
+0       0.9618     1.0552     0.9990    2.6163
+1      -6.8696    -6.4959    -6.7205    0.0010
+2     -7.2675*   -6.6137*   -7.0067*   0.0007*
+3      -7.1255    -6.1914    -6.7529    0.0008
+4      -6.9649    -5.7506    -6.4805    0.0010
+5      -7.0662    -5.5717    -6.4700    0.0009
+6      -6.9801    -5.2053    -6.2721    0.0010
+================================================================================
+An asterisk marks each criterion's minimum. Every order was scored on the same
+sample, so entries within a column are comparable; FPE is on a determinant
+scale, so entries across columns are not.

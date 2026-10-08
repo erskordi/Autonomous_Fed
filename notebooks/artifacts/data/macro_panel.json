@@ -1,0 +1,17 @@
+{
+  "config": {
+    "train_start": "1987Q3",
+    "train_end": "2007Q2",
+    "oos_start": "2007Q3",
+    "tvp_training_quarters": 40,
+    "order": 2,
+    "fetch_start": "1976-07-01"
+  },
+  "retrieved": "2026-10-07",
+  "source": {
+    "pi": "GDPDEF",
+    "gdp_real": "GDPC1",
+    "gdp_potential": "GDPPOT",
+    "i": "FEDFUNDS"
+  }
+}

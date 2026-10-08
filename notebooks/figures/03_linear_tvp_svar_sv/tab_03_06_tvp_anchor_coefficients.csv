@@ -1,0 +1,18 @@
+Equation,Parameter,TVP-SVAR-SV at 2007Q2,Restricted SVAR(2)
+Output gap equation,$C^y$,0.11664964305448548,0.3069966369569673
+Output gap equation,"$a^y_{y,1}$",0.9895991732892466,0.977454375545922
+Output gap equation,"$a^y_{y,2}$",-0.052375042717383184,0.0
+Output gap equation,"$a^y_{\pi,1}$",-0.07684443767435173,-0.02284855885937946
+Output gap equation,"$a^y_{\pi,2}$",0.041352966227911965,0.0
+Output gap equation,"$a^y_{i,1}$",0.21656946903197732,-0.049869955573605455
+Output gap equation,"$a^y_{i,2}$",-0.21316253315564787,0.0
+Output gap equation,Shock std. dev.,0.43432505143712813,0.48135733410114206
+Inflation equation,$C^\pi$,0.09149170639471213,0.12748387727065233
+Inflation equation,"$a^\pi_{y,0}$",0.058174453482535714,-0.06418357941285957
+Inflation equation,"$a^\pi_{y,1}$",-0.0021721516536379326,0.2086345986316801
+Inflation equation,"$a^\pi_{y,2}$",-0.0415551109433564,-0.10935513653407695
+Inflation equation,"$a^\pi_{\pi,1}$",1.3678689124548367,1.2914170995254863
+Inflation equation,"$a^\pi_{\pi,2}$",-0.40186808155821674,-0.31495316087826714
+Inflation equation,"$a^\pi_{i,1}$",0.04130122472568034,-0.016860600457094112
+Inflation equation,"$a^\pi_{i,2}$",-0.043235470737952295,0.0
+Inflation equation,Shock std. dev.,0.2643113344626109,0.18492792381516532

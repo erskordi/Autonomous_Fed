@@ -1,0 +1,15 @@
+                           Structural VAR (recursive)
+================================================================================
+Scheme:                      recursive  Identified shocks:              3 of 3
+Variables:                           3  Observations:                       78
+--------------------------------------------------------------------------------
+impact of           y       pi        i
+y              0.4784   0.0000   0.0000
+pi            -0.0353   0.1831   0.0000
+i              0.1107   0.0701   0.2818
+================================================================================
+Recursive ordering y -> pi -> i: each variable responds on impact only to shocks
+at or before its own position. Permuting the ordering changes the answer; that
+is the identifying assumption, not a numerical artifact.
+Shocks are normalized to unit variance, so impact-column entries are responses
+to a one-standard-deviation structural shock.

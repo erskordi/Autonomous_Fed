@@ -1,0 +1,21 @@
+                               TVP-VAR-SV(2) Results
+====================================================================================
+Model:                      TVP-VAR-SV(2)  Draws:           3000 (1500 burn, thin 2)
+Variables:                              3  Kept:                                 750
+Observations:                         156  Training:                              40
+Trend:                                  c  State dimension:                       21
+------------------------------------------------------------------------------------
+equation     own L1 at start   own L1 at end
+y                     0.9919          0.9835
+pi                    1.3594          1.3672
+i                     1.5465          1.5730
+====================================================================================
+Posterior mean drift over the sample: max |beta_T - beta_1| = 0.1715 against a
+median 68% band width of 0.1443; drift smaller than the band is not evidence of time
+variation.
+Max |companion root| of the posterior mean path: 0.9325 (a drifting model may pass
+through locally explosive dates; stability_path() shows where).
+The training sample calibrates the priors and is then discarded; all paths are
+indexed on the estimation sample that follows it.
+No likelihood, parameter count, or information criteria are reported: this is a
+Gibbs posterior and has none.

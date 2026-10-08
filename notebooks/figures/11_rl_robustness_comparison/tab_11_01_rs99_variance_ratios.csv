@@ -1,0 +1,32 @@
+Algorithm,Policy,var(pi),var(y),var(Delta i),Mean
+Reference rules,TR93,1.0,1.0,1.0,1.0
+Reference rules,NPP,0.5611218634457847,1.2387987145546286,1.749966213320669,1.1832955971070274
+Reference rules,BA,1.0933416850064461,0.7843032259394921,1.206221121780703,1.0279553442422138
+DDPG,NARX: x1 linear,inf,inf,inf,inf
+DDPG,NARX: x1 nonlinear,inf,inf,inf,inf
+DDPG,NARX: x2 linear,inf,inf,inf,inf
+DDPG,NARX: x2 nonlinear,inf,inf,inf,inf
+DDPG,NSSM: x1 linear,inf,inf,inf,inf
+DDPG,NSSM: x1 nonlinear,inf,inf,inf,inf
+DDPG,NSSM: x2 linear,inf,inf,inf,inf
+DDPG,NSSM: x2 nonlinear,inf,inf,inf,inf
+DDPG,SVAR: x1 linear,0.9134071795117439,0.793832882826306,1.42650183452503,1.0445806322876934
+DDPG,SVAR: x1 nonlinear,inf,inf,inf,inf
+DDPG,SVAR: x2 linear,0.6068331180875499,0.9334286325369199,1.9616819160397871,1.1673145555547524
+DDPG,SVAR: x2 nonlinear,inf,inf,inf,inf
+DDPG,TVP-SVAR-SV: x1 linear,inf,inf,inf,inf
+DDPG,TVP-SVAR-SV: x1 nonlinear,inf,inf,inf,inf
+DDPG,TVP-SVAR-SV: x2 linear,inf,inf,inf,inf
+DDPG,TVP-SVAR-SV: x2 nonlinear,inf,inf,inf,inf
+SAC,NARX: x1 nonlinear,inf,inf,inf,inf
+SAC,NARX: x2 nonlinear,inf,inf,inf,inf
+SAC,NSSM: x1 nonlinear,inf,inf,inf,inf
+SAC,NSSM: x2 nonlinear,inf,inf,inf,inf
+SAC,SVAR: x1 nonlinear,inf,inf,inf,inf
+SAC,SVAR: x2 nonlinear,1.4893113502921305,0.7581929618911885,0.9891072757010244,1.078870529294781
+SAC,TVP-SVAR-SV: x1 nonlinear,inf,inf,inf,inf
+SAC,TVP-SVAR-SV: x2 nonlinear,inf,inf,inf,inf
+Q-learning,NARX: x1 tabular,inf,inf,inf,inf
+Q-learning,NSSM: x1 tabular,inf,inf,inf,inf
+Q-learning,SVAR: x1 tabular,inf,inf,inf,inf
+Q-learning,TVP-SVAR-SV: x1 tabular,inf,inf,inf,inf

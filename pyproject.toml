@@ -4,33 +4,37 @@ build-backend = "hatchling.build"
 
 [project]
 name = "autofed"
-version = "0.0.1"
-description = "A package for simulating and analyzing the effects of monetary policy in a federal reserve context."
+version = "0.0.2"
+description = "Reinforcement learning for monetary policy: estimated economies, benchmark rules and learned reaction functions."
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12,<4.0"
 authors = [
     { name = "Nikhil Sunder", email = "nss106@miami.edu" },
     { name = "Eritokritos Skordilis", email = "eskordilis@bus.miami.edu" },
 ]
-keywords = []
+keywords = ["monetary policy", "reinforcement learning", "SVAR", "state-space models", "macroeconomics"]
 classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Typing :: Typed",
 ]
 dependencies = [
-    "torch",
-    "torchrl",
-    "fedfred",
-    "pandas",
     "numpy",
+    "pandas",
+    "scipy",
     "matplotlib",
-    "ipympl",
-    "ipywidgets",
-    "jupyterlab-lsp",
-    "nbdime",
-    "types-python-dateutil",
-    "statsmodels",
+    "fedfred>=3.0",
     "cultivars>=1.0.0a1",
 ]
+
+[project.optional-dependencies]
+nonlinear = ["torch"]
+rl = ["torch", "torchrl==0.14.0", "tensordict==0.14.2"]
+notebooks = ["jupyterlab", "ipykernel", "nbconvert[webpdf]"]
 
 [project.urls]
 Repository = "https://erskordi.github.io/Autonomous_Fed/"
@@ -52,13 +56,16 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/autofed"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src/autofed", "README.md", "LICENSE", "CITATION.cff", "pyproject.toml"]
+
 [tool.mypy]
 files = "src/autofed"
 ignore_missing_imports = true
 
 [tool.pylint]
 max-line-length = 250
-disable = ["E0401", "R0902", "R0913", "R0917", "R0903", "R1705", "R0911", "R0912", "R0914", "R0915", "R1735", "W0222"]
+disable = []
 ignore-patterns = [".*\\.pyi$"]
 
 [tool.bandit]

@@ -1,0 +1,114 @@
+{
+  "notebook": "05_nonlinear_narx",
+  "title": "Non-linear economy: the restricted NARX networks",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 5.1",
+      "slug": "narx_design",
+      "title": "Restricted NARX design matrices",
+      "note": "Lag-aligned estimation sample 1988Q1-2007Q2.",
+      "file": "tab_05_01_narx_design.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 5.2",
+      "slug": "hidden_unit_search",
+      "title": "Hidden-unit search",
+      "note": "30 initialisations per size. MSE in scaled units (targets mapped to [-1, 1]). The size with the lowest mean validation MSE is selected; its trial with the lowest overall MSE supplies the weights.",
+      "file": "tab_05_02_hidden_unit_search.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 5.1",
+      "slug": "hidden_unit_selection",
+      "title": "Validation error by hidden-layer size",
+      "note": "Mean over 30 initialisations of the validation MSE on the last 15% of the sample.",
+      "file": "fig_05_01_hidden_unit_selection.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 5.3",
+      "slug": "selected_networks",
+      "title": "Selected networks",
+      "note": "Training and validation MSE in scaled units; residual standard deviation in percentage points over the estimation window.",
+      "file": "tab_05_03_selected_networks.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 5.2",
+      "slug": "in_sample_se_output_gap",
+      "title": "Output gap fit: squared errors of the SVAR and the ANN",
+      "note": "Squared one-step errors over 1988Q1-2007Q2. Counterpart of Hinterlang & T\u00e4nzer (2021, Figure 4).",
+      "file": "fig_05_02_in_sample_se_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 5.3",
+      "slug": "in_sample_se_inflation",
+      "title": "Inflation fit: squared errors of the SVAR and the ANN",
+      "note": "Squared one-step errors over 1988Q1-2007Q2; inflation fits are conditional on the realised output gap. Counterpart of Hinterlang & T\u00e4nzer (2021, Figure 5).",
+      "file": "fig_05_03_in_sample_se_inflation.png"
+    },
+    {
+      "kind": "table",
+      "number": 4,
+      "label": "Table 5.4",
+      "slug": "economy_fit",
+      "title": "Economy fit: mean squared errors",
+      "note": "Estimation window. MSE total is the average of the two equations. On this vintage the ANN changes the total by -7.9% relative to the SVAR.",
+      "file": "tab_05_04_economy_fit.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 5.4",
+      "slug": "partial_dependence_inflation",
+      "title": "Partial dependence of inflation in the ANN economy",
+      "note": "Inflation as a function of last quarter's funds rate and the output gap, with the three output-gap inputs equal and both inflation lags at their sample mean (2.47). Axes span the estimation-window ranges. Counterpart of Hinterlang & T\u00e4nzer (2021, Figure 6).",
+      "file": "fig_05_04_partial_dependence_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 5.5",
+      "slug": "partial_dependence_output_gap",
+      "title": "Partial dependence of the output gap in the ANN economy",
+      "note": "Output gap as a function of last quarter's inflation and funds rate, with the lagged output gap at its sample mean (0.19). Counterpart of Hinterlang & T\u00e4nzer (2021, Figure 7).",
+      "file": "fig_05_05_partial_dependence_output_gap.png"
+    },
+    {
+      "kind": "table",
+      "number": 5,
+      "label": "Table 5.5",
+      "slug": "oos_error_metrics",
+      "title": "Out-of-sample one-step errors from 2007Q3",
+      "note": "Both economies are held fixed at their estimation-window fit. Out-of-sample inputs can lie outside the range the scalers and the networks were fitted on.",
+      "file": "tab_05_05_oos_error_metrics.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 5.6",
+      "slug": "oos_output_gap",
+      "title": "Output gap out of sample: actual and one-step fits of the ANN and the SVAR",
+      "note": "Networks and coefficients estimated on 1987Q3-2007Q2; fits use realised lags.",
+      "file": "fig_05_06_oos_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 7,
+      "label": "Figure 5.7",
+      "slug": "oos_inflation",
+      "title": "Inflation out of sample: actual and one-step fits of the ANN and the SVAR",
+      "note": "Fits are conditional on the realised contemporaneous output gap. Reference line: 2 percent.",
+      "file": "fig_05_07_oos_inflation.png"
+    }
+  ]
+}

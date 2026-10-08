@@ -1,0 +1,69 @@
+{
+  "notebook": "04_policy_rules",
+  "title": "Benchmark policy rules: TR93, NPP and BA",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 4.1",
+      "slug": "rule_coefficients",
+      "title": "Benchmark rule coefficients",
+      "note": "TR93: Taylor (1993). NPP: Nikolsko-Rzhevskyy, Papell & Prodan (2018). BA: balanced approach. Coefficients as in Hinterlang & T\u00e4nzer (2021, Table 4).",
+      "file": "tab_04_01_rule_coefficients.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 4.1",
+      "slug": "static_prescriptions_by_rule",
+      "title": "Static rule prescriptions and the effective federal funds rate",
+      "note": "Shaded: estimation window 1987Q3-2007Q2. Prescriptions are not floored at zero.",
+      "file": "fig_04_01_static_prescriptions_by_rule.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 4.2",
+      "slug": "static_prescriptions_combined",
+      "title": "Static prescriptions of the three rules and their deviations from the actual rate",
+      "note": "Shaded: estimation window 1987Q3-2007Q2.",
+      "file": "fig_04_02_static_prescriptions_combined.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 4.2",
+      "slug": "static_deviations",
+      "title": "Deviations of the static prescriptions from the actual rate",
+      "note": "Percentage points; rule minus the effective federal funds rate.",
+      "file": "tab_04_02_static_deviations.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 4.3",
+      "slug": "closed_loop_stability",
+      "title": "Closed-loop stability of the economy under each rule",
+      "note": "Economy: Restricted SVAR(2). Net funds-rate effect on the output gap, first plus second lag: -0.0499.",
+      "file": "tab_04_03_closed_loop_stability.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 4.3",
+      "slug": "dynamic_counterfactual",
+      "title": "Actual and counterfactual paths under the benchmark rules",
+      "note": "Economy: Restricted SVAR(2), with its historical structural shocks. Shaded: estimation window. Counterpart of Hinterlang & T\u00e4nzer (2021, Figure 10) without the reinforcement-learning policies.",
+      "file": "fig_04_03_dynamic_counterfactual.png"
+    },
+    {
+      "kind": "table",
+      "number": 4,
+      "label": "Table 4.4",
+      "slug": "counterfactual_loss",
+      "title": "Target deviations and central-bank loss under each policy",
+      "note": "Published block: SVAR economy, 1987Q3-2007Q2. Differences from it reflect the data vintage and the restriction it implies.",
+      "file": "tab_04_04_counterfactual_loss.png"
+    }
+  ]
+}

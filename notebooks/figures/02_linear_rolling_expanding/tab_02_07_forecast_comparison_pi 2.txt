@@ -1,0 +1,19 @@
+                              Forecast Comparison
+================================================================================
+Origins:                            76  Horizon:                             1
+Mean differential:            +0.04493
+--------------------------------------------------------------------------------
+test                              statistic   p-value
+Diebold-Mariano                      1.3987    0.1619
+Harvey-Leybourne-Newbold             1.3895    0.1688
+Giacomini-White (conditional)        1.9412    0.3789
+================================================================================
+Mean loss differential +0.04493: the sign favors forecaster B (losses are
+negatively oriented).
+The HLN row is the DM statistic with the small-sample correction, referred to a
+t distribution; in short evaluation windows it is the number to trust.
+Giacomini-White asks whether the gap was *predictable* from a constant and the
+differential lagged by the horizon; its framework wants rolling-window
+estimation behind the losses.
+These are tests about forecasts, not models: nested-model comparisons need the
+Clark-McCracken corrections, which are deliberately not implemented here.

@@ -1,0 +1,123 @@
+{
+  "notebook": "08_rl_ddpg",
+  "title": "Reinforcement learning: DDPG",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 8.1",
+      "slug": "architecture_search",
+      "title": "DDPG architecture search",
+      "note": "One training run of 12500 frames per row. SS reward: steady-state reward of the best checkpoint; -inf when no episode passed the selection filter, in which case the final weights are kept. The linear actor has no hidden layer, so its actor size is fixed at 1.",
+      "file": "tab_08_01_architecture_search.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 8.2",
+      "slug": "chosen_architectures",
+      "title": "Chosen numbers of hidden nodes",
+      "note": "Counterpart of Hinterlang & T\u00e4nzer (2021, Table 2). x1 = (y, pi); x2 adds one lag of each.",
+      "file": "tab_08_02_chosen_architectures.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 8.3",
+      "slug": "taylor_coefficients",
+      "title": "Effective Taylor coefficients of the DDPG policies",
+      "note": "OLS of the clipped policy rate on a (pi, y) grid, in the level form i = alpha0 + beta_pi pi + beta_y y of Hinterlang & T\u00e4nzer (2021, Table 4). R2 measures how well a linear rule describes the policy.",
+      "file": "tab_08_03_taylor_coefficients.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 8.1",
+      "slug": "training_curves",
+      "title": "DDPG training: episode returns of the winning architecture in each cell",
+      "note": "Undiscounted episode return, 25-episode rolling mean. Rows: economies; columns: observation and variant.",
+      "file": "fig_08_01_training_curves.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 8.2",
+      "slug": "reaction_functions_svar",
+      "title": "DDPG reaction functions trained in the SVAR economy",
+      "note": "Policy rate over inflation and the output gap; under x2 the lagged inputs equal the current ones. Dashed lines: the inflation target and a closed output gap.",
+      "file": "fig_08_02_reaction_functions_svar.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 8.3",
+      "slug": "reaction_functions_tvp_svar_sv",
+      "title": "DDPG reaction functions trained in the TVP-SVAR-SV economy",
+      "note": "Policy rate over inflation and the output gap; under x2 the lagged inputs equal the current ones. Dashed lines: the inflation target and a closed output gap.",
+      "file": "fig_08_03_reaction_functions_tvp_svar_sv.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 8.4",
+      "slug": "reaction_functions_narx",
+      "title": "DDPG reaction functions trained in the NARX economy",
+      "note": "Policy rate over inflation and the output gap; under x2 the lagged inputs equal the current ones. Dashed lines: the inflation target and a closed output gap.",
+      "file": "fig_08_04_reaction_functions_narx.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 8.5",
+      "slug": "reaction_functions_nssm",
+      "title": "DDPG reaction functions trained in the NSSM economy",
+      "note": "Policy rate over inflation and the output gap; under x2 the lagged inputs equal the current ones. Dashed lines: the inflation target and a closed output gap.",
+      "file": "fig_08_05_reaction_functions_nssm.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 8.6",
+      "slug": "simulated_paths_svar",
+      "title": "DDPG policies and the reference rules in the SVAR economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_08_06_simulated_paths_svar.png"
+    },
+    {
+      "kind": "figure",
+      "number": 7,
+      "label": "Figure 8.7",
+      "slug": "simulated_paths_tvp_svar_sv",
+      "title": "DDPG policies and the reference rules in the TVP-SVAR-SV economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_08_07_simulated_paths_tvp_svar_sv.png"
+    },
+    {
+      "kind": "figure",
+      "number": 8,
+      "label": "Figure 8.8",
+      "slug": "simulated_paths_narx",
+      "title": "DDPG policies and the reference rules in the NARX economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_08_08_simulated_paths_narx.png"
+    },
+    {
+      "kind": "figure",
+      "number": 9,
+      "label": "Figure 8.9",
+      "slug": "simulated_paths_nssm",
+      "title": "DDPG policies and the reference rules in the NSSM economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_08_09_simulated_paths_nssm.png"
+    },
+    {
+      "kind": "table",
+      "number": 4,
+      "label": "Table 8.4",
+      "slug": "loss_decomposition",
+      "title": "Loss decomposition of the simulated paths: DDPG and the reference rules",
+      "note": "Mean squared deviations over the simulated quarters; Loss weights them as the reward does. The Actual row is the same statistic on the realised data and is a reference level, not a like-for-like comparison.",
+      "file": "tab_08_04_loss_decomposition.png"
+    }
+  ]
+}

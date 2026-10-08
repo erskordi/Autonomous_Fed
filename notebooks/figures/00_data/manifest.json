@@ -1,0 +1,51 @@
+{
+  "notebook": "00_data",
+  "title": "Data: the quarterly macro panel",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 0.1",
+      "slug": "fred_series",
+      "title": "FRED series and transformations",
+      "note": "All series are requested at quarterly frequency from 1976-07-01. Retrieved 2026-10-07.",
+      "file": "tab_00_01_fred_series.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 0.2",
+      "slug": "sample_windows",
+      "title": "Sample windows",
+      "note": "The baseline VAR(2) takes its two initial lags from the first two quarters of the estimation window.",
+      "file": "tab_00_02_sample_windows.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 0.1",
+      "slug": "observables",
+      "title": "Output gap, inflation and the federal funds rate",
+      "note": "Source: FRED (GDPC1, GDPPOT, GDPDEF, FEDFUNDS), retrieved 2026-10-07. Reference lines: zero output gap and 2 percent inflation.",
+      "file": "fig_00_01_observables.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 0.2",
+      "slug": "output_gap_construction",
+      "title": "Construction of the output gap from real and potential GDP",
+      "note": "The gap is the percent deviation of real GDP from the CBO estimate of potential. Shaded: estimation window.",
+      "file": "fig_00_02_output_gap_construction.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 0.3",
+      "slug": "descriptive_statistics",
+      "title": "Descriptive statistics by sample window",
+      "note": "All variables in percent.",
+      "file": "tab_00_03_descriptive_statistics.png"
+    }
+  ]
+}

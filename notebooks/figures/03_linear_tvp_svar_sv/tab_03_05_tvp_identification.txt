@@ -1,0 +1,18 @@
+                         TVP-SVAR (TVP-VAR-SV) Results
+================================================================================
+Scheme:                      recursive  Reduced form:            TVP-VAR-SV(2)
+Observations:                      156  Kept draws:                        750
+--------------------------------------------------------------------------------
+equation     |impact| at start   |impact| at end
+y                       0.6077            0.3661
+pi                      0.2143            0.5345
+i                       0.4908            0.2059
+================================================================================
+The identifying restriction is recursive in the order of names, declared at
+estimation time through the triangular factorization: a different ordering is a
+different fitted model, not a different rotation of this one.
+irf(t=...) freezes coefficients and impact at date t's posterior mean: read it
+as the transmission mechanism prevailing at t, exact only while parameters do
+not drift over the horizon.
+Point summaries are posterior-mean plug-ins; the source result retains the draws
+for full uncertainty propagation.

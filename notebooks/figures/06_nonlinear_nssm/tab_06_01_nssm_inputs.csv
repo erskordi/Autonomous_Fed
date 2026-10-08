@@ -1,0 +1,3 @@
+,Target,Inputs,Observations,Input dimension
+Output gap block,$y_t$,"$y_{t-1},\ y_{t-2},\ \pi_{t-1},\ \pi_{t-2},\ i_{t-1},\ i_{t-2}$",78,6
+Inflation block,$\pi_t$,"$y_t,\ y_{t-1},\ y_{t-2},\ \pi_{t-1},\ \pi_{t-2},\ i_{t-1},\ i_{t-2}$",78,7

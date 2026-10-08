@@ -1,0 +1,141 @@
+{
+  "notebook": "03_linear_tvp_svar_sv",
+  "title": "Linear economy: TVP-SVAR(2) with stochastic volatility",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 3.1",
+      "slug": "tvp_summary",
+      "title": "TVP-VAR-SV(2): estimation summary",
+      "note": "Estimation sample 1987Q3-2026Q2 (T = 156); 750 kept draws per chain.",
+      "file": "tab_03_01_tvp_summary.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 3.2",
+      "slug": "tvp_convergence",
+      "title": "Sampler convergence by parameter block",
+      "note": "Two chains. A quantity is flagged when split R-hat exceeds 1.01 or the effective sample size per chain is below 100. Overall verdict: not converged at these thresholds.",
+      "file": "tab_03_02_tvp_convergence.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 3.3",
+      "slug": "tvp_convergence_detail",
+      "title": "Sampler convergence: least well-mixed quantities",
+      "note": null,
+      "file": "tab_03_03_tvp_convergence_detail.png"
+    },
+    {
+      "kind": "table",
+      "number": 4,
+      "label": "Table 3.4",
+      "slug": "tvp_error_metrics",
+      "title": "TVP-SVAR-SV: errors of the posterior-mean fit",
+      "note": "Smoothed (two-sided) fits: the Gibbs draws condition on the whole sample. Inflation is conditional on realised y.",
+      "file": "tab_03_04_tvp_error_metrics.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 3.1",
+      "slug": "tvp_se_output_gap",
+      "title": "Output gap fit: squared errors, TVP-SVAR-SV, estimation window",
+      "note": null,
+      "file": "fig_03_01_tvp_se_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 3.2",
+      "slug": "tvp_se_inflation",
+      "title": "Inflation fit: squared errors, TVP-SVAR-SV, estimation window",
+      "note": "Fits are conditional on the realised contemporaneous output gap.",
+      "file": "fig_03_02_tvp_se_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 3.3",
+      "slug": "tvp_oos_output_gap",
+      "title": "Output gap out of sample: actual and TVP-SVAR-SV posterior-mean fit",
+      "note": null,
+      "file": "fig_03_03_tvp_oos_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 3.4",
+      "slug": "tvp_oos_inflation",
+      "title": "Inflation out of sample: actual and TVP-SVAR-SV posterior-mean fit",
+      "note": "Fits are conditional on the realised contemporaneous output gap. Reference line: 2 percent.",
+      "file": "fig_03_04_tvp_oos_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 3.5",
+      "slug": "tvp_coefficient_paths",
+      "title": "Posterior paths of selected time-varying coefficients",
+      "note": "Dashed vertical line: start of the out-of-sample window (2007Q3).",
+      "file": "fig_03_05_tvp_coefficient_paths.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 3.6",
+      "slug": "tvp_volatility_paths",
+      "title": "Stochastic volatility of the orthogonalised shocks",
+      "note": "Posterior mean and 68% band of exp(h/2). Dashed vertical line: start of the out-of-sample window.",
+      "file": "fig_03_06_tvp_volatility_paths.png"
+    },
+    {
+      "kind": "figure",
+      "number": 7,
+      "label": "Figure 3.7",
+      "slug": "tvp_stability_path",
+      "title": "Local stability of the drifting environment",
+      "note": "Computed from the posterior-mean coefficients at each date; values below one are locally stable.",
+      "file": "fig_03_07_tvp_stability_path.png"
+    },
+    {
+      "kind": "table",
+      "number": 5,
+      "label": "Table 3.5",
+      "slug": "tvp_identification",
+      "title": "Recursive identification of the TVP-VAR-SV",
+      "note": null,
+      "file": "tab_03_05_tvp_identification.png"
+    },
+    {
+      "kind": "figure",
+      "number": 8,
+      "label": "Figure 3.8",
+      "slug": "tvp_policy_shock_irf",
+      "title": "Time-varying transmission of a policy-rate shock",
+      "note": "Responses to a one-standard-deviation policy-rate shock with coefficients and impact frozen at each date.",
+      "file": "fig_03_08_tvp_policy_shock_irf.png"
+    },
+    {
+      "kind": "table",
+      "number": 6,
+      "label": "Table 3.6",
+      "slug": "tvp_anchor_coefficients",
+      "title": "Structural coefficients: TVP anchor and restricted SVAR",
+      "note": "TVP entries are posterior-mean plug-ins. Zeros in the SVAR column are dropped lags.",
+      "file": "tab_03_06_tvp_anchor_coefficients.png"
+    },
+    {
+      "kind": "table",
+      "number": 7,
+      "label": "Table 3.7",
+      "slug": "oos_summary",
+      "title": "Out-of-sample one-step errors of the five linear environments, from 2007Q3",
+      "note": "The first four rows are real-time fits and are directly comparable. The TVP row is a smoothed fit that conditions on the whole sample.",
+      "file": "tab_03_07_oos_summary.png"
+    }
+  ]
+}

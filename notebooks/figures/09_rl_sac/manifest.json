@@ -1,0 +1,114 @@
+{
+  "notebook": "09_rl_sac",
+  "title": "Reinforcement learning: SAC",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 9.1",
+      "slug": "trained_cells",
+      "title": "SAC cells",
+      "note": "One run of 12500 frames per cell, actor and critics with hidden layers (64, 64). SS reward: steady-state reward of the best checkpoint; -inf when no episode passed the selection filter.",
+      "file": "tab_09_01_trained_cells.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 9.2",
+      "slug": "taylor_coefficients",
+      "title": "Effective Taylor coefficients of the SAC policies",
+      "note": "OLS of the clipped policy rate on a (pi, y) grid, in the level form i = alpha0 + beta_pi pi + beta_y y.",
+      "file": "tab_09_02_taylor_coefficients.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 9.1",
+      "slug": "training_curves",
+      "title": "SAC training: episode returns in each cell",
+      "note": "Undiscounted episode return, 25-episode rolling mean.",
+      "file": "fig_09_01_training_curves.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 9.2",
+      "slug": "reaction_functions_svar",
+      "title": "SAC reaction functions trained in the SVAR economy",
+      "note": "Policy rate at the distribution's deterministic sample, over inflation and the output gap; under x2 the lagged inputs equal the current ones.",
+      "file": "fig_09_02_reaction_functions_svar.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 9.3",
+      "slug": "reaction_functions_tvp_svar_sv",
+      "title": "SAC reaction functions trained in the TVP-SVAR-SV economy",
+      "note": "Policy rate at the distribution's deterministic sample, over inflation and the output gap; under x2 the lagged inputs equal the current ones.",
+      "file": "fig_09_03_reaction_functions_tvp_svar_sv.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 9.4",
+      "slug": "reaction_functions_narx",
+      "title": "SAC reaction functions trained in the NARX economy",
+      "note": "Policy rate at the distribution's deterministic sample, over inflation and the output gap; under x2 the lagged inputs equal the current ones.",
+      "file": "fig_09_04_reaction_functions_narx.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 9.5",
+      "slug": "reaction_functions_nssm",
+      "title": "SAC reaction functions trained in the NSSM economy",
+      "note": "Policy rate at the distribution's deterministic sample, over inflation and the output gap; under x2 the lagged inputs equal the current ones.",
+      "file": "fig_09_05_reaction_functions_nssm.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 9.6",
+      "slug": "simulated_paths_svar",
+      "title": "SAC policies and the reference rules in the SVAR economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_09_06_simulated_paths_svar.png"
+    },
+    {
+      "kind": "figure",
+      "number": 7,
+      "label": "Figure 9.7",
+      "slug": "simulated_paths_tvp_svar_sv",
+      "title": "SAC policies and the reference rules in the TVP-SVAR-SV economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_09_07_simulated_paths_tvp_svar_sv.png"
+    },
+    {
+      "kind": "figure",
+      "number": 8,
+      "label": "Figure 9.8",
+      "slug": "simulated_paths_narx",
+      "title": "SAC policies and the reference rules in the NARX economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_09_08_simulated_paths_narx.png"
+    },
+    {
+      "kind": "figure",
+      "number": 9,
+      "label": "Figure 9.9",
+      "slug": "simulated_paths_nssm",
+      "title": "SAC policies and the reference rules in the NSSM economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_09_09_simulated_paths_nssm.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 9.3",
+      "slug": "loss_decomposition",
+      "title": "Loss decomposition of the simulated paths: SAC and the reference rules",
+      "note": "Mean squared deviations over the simulated quarters; Loss weights them as the reward does. The Actual row is the same statistic on the realised data and is a reference level, not a like-for-like comparison.",
+      "file": "tab_09_03_loss_decomposition.png"
+    }
+  ]
+}

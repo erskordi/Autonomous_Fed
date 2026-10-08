@@ -1,0 +1,168 @@
+{
+  "notebook": "02_linear_rolling_expanding",
+  "title": "Linear economy: rolling and expanding re-estimation",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 2.1",
+      "slug": "rolling_error_metrics",
+      "title": "Rolling SVAR(2), W = 40: one-step errors",
+      "note": "In-sample fits start at 1997Q3, once the first window is full. Inflation fits are conditional on realised y.",
+      "file": "tab_02_01_rolling_error_metrics.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 2.1",
+      "slug": "rolling_se_output_gap",
+      "title": "Output gap fit: squared errors, rolling SVAR(2), estimation window",
+      "note": "Each fitted value uses coefficients estimated on the 40 quarters before it.",
+      "file": "fig_02_01_rolling_se_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 2.2",
+      "slug": "rolling_se_inflation",
+      "title": "Inflation fit: squared errors, rolling SVAR(2), estimation window",
+      "note": "Fits are conditional on the realised contemporaneous output gap.",
+      "file": "fig_02_02_rolling_se_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 2.3",
+      "slug": "rolling_oos_output_gap",
+      "title": "Output gap out of sample: actual and rolling SVAR(2) fit",
+      "note": null,
+      "file": "fig_02_03_rolling_oos_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 2.4",
+      "slug": "rolling_oos_inflation",
+      "title": "Inflation out of sample: actual and rolling SVAR(2) fit",
+      "note": "Fits are conditional on the realised contemporaneous output gap. Reference line: 2 percent.",
+      "file": "fig_02_04_rolling_oos_inflation.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 2.2",
+      "slug": "rolling_window_sensitivity",
+      "title": "Rolling window length and out-of-sample RMSE",
+      "note": "One-step errors from 2007Q3; W = 40 is the baseline.",
+      "file": "tab_02_02_rolling_window_sensitivity.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 2.3",
+      "slug": "expanding_error_metrics",
+      "title": "Expanding-window SVAR(2): one-step errors",
+      "note": "The first estimation sample has 12 quarters. Inflation fits are conditional on realised y.",
+      "file": "tab_02_03_expanding_error_metrics.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 2.5",
+      "slug": "expanding_se_output_gap",
+      "title": "Output gap fit: squared errors, expanding SVAR(2), estimation window",
+      "note": null,
+      "file": "fig_02_05_expanding_se_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 2.6",
+      "slug": "expanding_se_inflation",
+      "title": "Inflation fit: squared errors, expanding SVAR(2), estimation window",
+      "note": null,
+      "file": "fig_02_06_expanding_se_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 7,
+      "label": "Figure 2.7",
+      "slug": "expanding_oos_output_gap",
+      "title": "Output gap out of sample: actual and expanding SVAR(2) fit",
+      "note": null,
+      "file": "fig_02_07_expanding_oos_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 8,
+      "label": "Figure 2.8",
+      "slug": "expanding_oos_inflation",
+      "title": "Inflation out of sample: actual and expanding SVAR(2) fit",
+      "note": "Fits are conditional on the realised contemporaneous output gap. Reference line: 2 percent.",
+      "file": "fig_02_08_expanding_oos_inflation.png"
+    },
+    {
+      "kind": "table",
+      "number": 4,
+      "label": "Table 2.4",
+      "slug": "backtest_rolling",
+      "title": "Rolling-origin backtest, rolling window W = 40",
+      "note": null,
+      "file": "tab_02_04_backtest_rolling.png"
+    },
+    {
+      "kind": "table",
+      "number": 5,
+      "label": "Table 2.5",
+      "slug": "backtest_expanding",
+      "title": "Rolling-origin backtest, expanding window",
+      "note": null,
+      "file": "tab_02_05_backtest_expanding.png"
+    },
+    {
+      "kind": "table",
+      "number": 6,
+      "label": "Table 2.6",
+      "slug": "forecast_comparison_y",
+      "title": "Equal predictive ability, output gap: rolling W = 40 (A) against expanding (B)",
+      "note": "Squared loss, horizon one quarter.",
+      "file": "tab_02_06_forecast_comparison_y.png"
+    },
+    {
+      "kind": "table",
+      "number": 7,
+      "label": "Table 2.7",
+      "slug": "forecast_comparison_pi",
+      "title": "Equal predictive ability, inflation: rolling W = 40 (A) against expanding (B)",
+      "note": "Squared loss, horizon one quarter.",
+      "file": "tab_02_07_forecast_comparison_pi.png"
+    },
+    {
+      "kind": "table",
+      "number": 8,
+      "label": "Table 2.8",
+      "slug": "model_confidence_set_y",
+      "title": "Model confidence set, output gap",
+      "note": "Squared loss, horizon one quarter, 10 percent level.",
+      "file": "tab_02_08_model_confidence_set_y.png"
+    },
+    {
+      "kind": "table",
+      "number": 9,
+      "label": "Table 2.9",
+      "slug": "model_confidence_set_pi",
+      "title": "Model confidence set, inflation",
+      "note": "Squared loss, horizon one quarter, 10 percent level.",
+      "file": "tab_02_09_model_confidence_set_pi.png"
+    },
+    {
+      "kind": "table",
+      "number": 10,
+      "label": "Table 2.10",
+      "slug": "mincer_zarnowitz",
+      "title": "Mincer-Zarnowitz forecast-efficiency regressions",
+      "note": "Regression of the realised value on the one-step fit; efficiency requires intercept 0 and slope 1.",
+      "file": "tab_02_10_mincer_zarnowitz.png"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+Variable,FRED series,Request,Definition
+"Inflation, $\pi_t$",GDPDEF,units = pc1,"GDP deflator, percent change from a year ago"
+"Real GDP, $Y_t$",GDPC1,units = lin,"billions of chained dollars, level"
+"Potential GDP, $Y^*_t$",GDPPOT,units = lin,"CBO estimate, billions of chained dollars, level"
+"Policy rate, $i_t$",FEDFUNDS,aggregation = avg,"effective federal funds rate, quarterly average"
+"Output gap, $y_t$",(derived),,"$100\,(Y_t / Y^*_t - 1)$, percent"

@@ -1,0 +1,5 @@
+,First quarter,Last quarter,Quarters
+TVP prior training sample,1977Q1,1986Q4,40
+TVP initial lags,1987Q1,1987Q2,2
+Estimation (training) window,1987Q3,2007Q2,80
+Out-of-sample window,2007Q3,2026Q2,76

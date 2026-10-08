@@ -1,0 +1,35 @@
+Group,Setting,Value
+Reward,pi_star,2.0
+Reward,omega_pi,0.5
+Reward,omega_y,0.5
+Reward,omega_di,0.5
+Reward,penalty_band,2.0
+Reward,penalty_weight,10.0
+Episodes,gamma,0.99
+Episodes,t_max,50
+Episodes,action_high,15.0
+Episodes,stop_pi_band,0.3
+Episodes,stop_y_band,0.3
+Episodes,macro_clamp_pi,10.0
+Episodes,macro_clamp_y,10.0
+Agent selection,select_er_es_min,-4.0
+Agent selection,select_er_es_min_search,-50.0
+Agent selection,candidate_save_every,5
+Agent selection,ss_rollout_steps,100
+Training,total_timesteps,12500
+Training,num_envs,1
+Training,learning_starts,500
+Training,batch_size,64
+Training,tau,0.005
+Training,seed,2026
+DDPG,ddpg_lr,0.001
+DDPG,ddpg_noise_sigma,0.3
+DDPG,critic_node_grid,"(1, 2)"
+DDPG,actor_node_grid,"(1, 4, 8)"
+SAC,sac_lr,0.0003
+SAC,sac_hidden,"(64, 64)"
+Q-learning,q_episodes,2000
+Q-learning,q_alpha,0.2
+Q-learning,q_epsilon,0.2
+Q-learning,q_epsilon_min,0.02
+Q-learning,q_epsilon_decay,0.999

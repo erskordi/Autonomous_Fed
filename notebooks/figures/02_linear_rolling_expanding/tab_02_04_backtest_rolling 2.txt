@@ -1,0 +1,17 @@
+                                    Backtest
+================================================================================
+Origins:                            76  Horizons:                            1
+Series:                              3  Scheme:                        rolling
+Draws:                               0
+--------------------------------------------------------------------------------
+h     series     RMSE      MAE   mean CRPS
+1          y   2.8134   1.1134           -
+1         pi   0.5570   0.3971           -
+1          i   0.5159   0.3320           -
+================================================================================
+Rolling scheme, 76 origins 1 apart, re-estimated at every origin; rolling window
+of 40 observations.
+Row t's h-step forecast is aligned with the outcome at origins[t] + h - 1;
+losses(kind, horizon=h, name=...) hands the aligned series to a comparison test.
+Point forecasts only: CRPS, log scores, and calibration need a result exposing
+forecast_paths().

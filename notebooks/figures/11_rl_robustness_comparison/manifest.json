@@ -1,0 +1,78 @@
+{
+  "notebook": "11_rl_robustness_comparison",
+  "title": "Reinforcement learning: robustness and comparison",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 11.1",
+      "slug": "rs99_variance_ratios",
+      "title": "Closed-loop variances in the Rudebusch-Svensson model, relative to TR93",
+      "note": "Unconditional variances of inflation, the output gap and the change in the policy rate under each rule, divided by their values under TR93; Mean averages the three. inf: unstable closed loop. Counterpart of Hinterlang & T\u00e4nzer (2021, Table 7) for the one backward-looking model.",
+      "file": "tab_11_01_rs99_variance_ratios.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 11.1",
+      "slug": "rs99_variance_scatter",
+      "title": "Stable rules in the Rudebusch-Svensson model",
+      "note": "6 of 31 rules give a stable closed loop. Rules to the lower left of TR93 reduce both variances.",
+      "file": "fig_11_01_rs99_variance_scatter.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 11.2",
+      "slug": "taylor_coefficients",
+      "title": "Effective Taylor coefficients of every trained policy",
+      "note": "OLS of the clipped policy rate on a (pi, y) grid, in the level form of Hinterlang & T\u00e4nzer (2021, Table 4). Grouped by the economy the policy was trained in.",
+      "file": "tab_11_02_taylor_coefficients.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 11.2",
+      "slug": "best_policies_svar",
+      "title": "Best policy of each algorithm and the reference rules in the SVAR economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual. For each algorithm the policy with the lowest loss in this economy is shown.",
+      "file": "fig_11_02_best_policies_svar.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 11.3",
+      "slug": "best_policies_tvp_svar_sv",
+      "title": "Best policy of each algorithm and the reference rules in the TVP-SVAR-SV economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual. For each algorithm the policy with the lowest loss in this economy is shown.",
+      "file": "fig_11_03_best_policies_tvp_svar_sv.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 11.4",
+      "slug": "best_policies_narx",
+      "title": "Best policy of each algorithm and the reference rules in the NARX economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual. For each algorithm the policy with the lowest loss in this economy is shown.",
+      "file": "fig_11_04_best_policies_narx.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 11.5",
+      "slug": "best_policies_nssm",
+      "title": "Best policy of each algorithm and the reference rules in the NSSM economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual. For each algorithm the policy with the lowest loss in this economy is shown.",
+      "file": "fig_11_05_best_policies_nssm.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 11.3",
+      "slug": "loss_decomposition",
+      "title": "Loss decomposition of every policy in its economy",
+      "note": "Mean squared deviations over the simulated quarters; Loss weights them as the reward does. The Actual row is the same statistic on the realised data and is a reference level, not a like-for-like comparison.",
+      "file": "tab_11_03_loss_decomposition.png"
+    }
+  ]
+}

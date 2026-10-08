@@ -1,0 +1,87 @@
+{
+  "notebook": "10_rl_qlearning",
+  "title": "Reinforcement learning: tabular Q-learning",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 10.1",
+      "slug": "trained_cells",
+      "title": "Q-learning cells",
+      "note": "State grid (6, 7) over (y, pi) on [-6, 6] x [-2, 6]; 21 rates from 0 to 10 percent. The table has 882 entries.",
+      "file": "tab_10_01_trained_cells.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 10.2",
+      "slug": "taylor_coefficients",
+      "title": "Effective Taylor coefficients of the Q-learning policies",
+      "note": "OLS of the greedy policy rate on a (pi, y) grid, in the level form i = alpha0 + beta_pi pi + beta_y y.",
+      "file": "tab_10_02_taylor_coefficients.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 10.1",
+      "slug": "training_curves",
+      "title": "Q-learning training: episode returns in each economy",
+      "note": "Undiscounted episode return, 100-episode rolling mean.",
+      "file": "fig_10_01_training_curves.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 10.2",
+      "slug": "reaction_functions",
+      "title": "Greedy Q-learning reaction functions in the four economies",
+      "note": "Policy rate of the value-maximising action in each state cell. Cells the agent never visited keep the initial value of zero for every rate, so the greedy choice there is the lowest rate.",
+      "file": "fig_10_02_reaction_functions.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 10.3",
+      "slug": "simulated_paths_svar",
+      "title": "Q-learning policies and the reference rules in the SVAR economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_10_03_simulated_paths_svar.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 10.4",
+      "slug": "simulated_paths_tvp_svar_sv",
+      "title": "Q-learning policies and the reference rules in the TVP-SVAR-SV economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_10_04_simulated_paths_tvp_svar_sv.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 10.5",
+      "slug": "simulated_paths_narx",
+      "title": "Q-learning policies and the reference rules in the NARX economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_10_05_simulated_paths_narx.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 10.6",
+      "slug": "simulated_paths_nssm",
+      "title": "Q-learning policies and the reference rules in the NSSM economy",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every policy faces the same shocks within an economy. Not a historical counterfactual.",
+      "file": "fig_10_06_simulated_paths_nssm.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 10.3",
+      "slug": "loss_decomposition",
+      "title": "Loss decomposition of the simulated paths: Q-learning and the reference rules",
+      "note": "Mean squared deviations over the simulated quarters; Loss weights them as the reward does. The Actual row is the same statistic on the realised data and is a reference level, not a like-for-like comparison.",
+      "file": "tab_10_03_loss_decomposition.png"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+Equation,Parameter,Full-model estimate,p-value,Decision
+Output gap equation,"$a^y_{y,2}$",-0.09552709781237606,0.450950627116457,dropped
+Output gap equation,"$a^y_{\pi,2}$",0.11053408270490395,0.7173562609680862,dropped
+Output gap equation,"$a^y_{i,2}$",-0.23203163977532,0.13078244886176182,dropped
+Inflation equation,"$a^\pi_{y,2}$",-0.09360957004385814,0.059044062174547975,kept
+Inflation equation,"$a^\pi_{\pi,2}$",-0.26312355384304736,0.02811759201931127,kept
+Inflation equation,"$a^\pi_{i,2}$",-0.07054103946122167,0.2395415519486635,dropped

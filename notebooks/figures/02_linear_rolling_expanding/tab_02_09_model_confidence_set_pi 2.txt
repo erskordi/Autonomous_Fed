@@ -1,0 +1,19 @@
+                              Model Confidence Set
+================================================================================
+Models:                              4  Origins:                            76
+Level:                             90%  In set:                              4
+--------------------------------------------------------------------------------
+model                   mean loss   MCS p
+Fixed, unrestricted       0.29566   0.382   in
+Fixed, restricted         0.28936   0.391   in
+Rolling W = 40            0.25738   0.391   in
+Expanding                 0.22135   1.000   in
+================================================================================
+4 of 4 models in the 90% set: Expanding, Rolling W = 40, Fixed, restricted,
+Fixed, unrestricted.
+Sequential elimination with the range statistic; null distribution from 1000
+stationary-bootstrap resamples with expected block length 4. A model's p-value
+is the running maximum of the elimination p-values up to its own (Hansen, Lunde
+& Nason, 2011).
+The set contains the best model with probability at least the confidence level;
+a set that keeps many models reports what the window can separate.

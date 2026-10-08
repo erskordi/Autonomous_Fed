@@ -1,0 +1,5 @@
+Economy,Artifact,Estimated in,"Shock s.d., output gap","Shock s.d., inflation",Latent dimension
+SVAR,linear/svar_restricted.json,01_linear_svar,0.48135733410114206,0.18492792381516532,0
+TVP-SVAR-SV,linear/tvp_anchor.json,03_linear_tvp_svar_sv,0.43432505143712813,0.2643113344626109,0
+NARX,nonlinear/narx.pt,05_nonlinear_narx,0.45656706170237554,0.15945935461144442,0
+NSSM,nonlinear/nssm.pt,06_nonlinear_nssm,0.4607620413444933,0.698714697797953,8

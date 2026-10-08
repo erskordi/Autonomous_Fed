@@ -1,0 +1,46 @@
+{
+  "pi_star": 2.0,
+  "omega_pi": 0.5,
+  "omega_y": 0.5,
+  "omega_di": 0.5,
+  "gamma": 0.99,
+  "t_max": 50,
+  "action_high": 15.0,
+  "penalty_band": 2.0,
+  "penalty_weight": 10.0,
+  "stop_pi_band": 0.3,
+  "stop_y_band": 0.3,
+  "macro_clamp_pi": 10.0,
+  "macro_clamp_y": 10.0,
+  "select_er_es_min": -4.0,
+  "select_er_es_min_search": -50.0,
+  "total_timesteps": 12500,
+  "critic_node_grid": [
+    1,
+    2
+  ],
+  "actor_node_grid": [
+    1,
+    4,
+    8
+  ],
+  "ss_rollout_steps": 100,
+  "candidate_save_every": 5,
+  "q_episodes": 2000,
+  "num_envs": 1,
+  "learning_starts": 500,
+  "batch_size": 64,
+  "tau": 0.005,
+  "ddpg_lr": 0.001,
+  "ddpg_noise_sigma": 0.3,
+  "sac_lr": 0.0003,
+  "sac_hidden": [
+    64,
+    64
+  ],
+  "q_alpha": 0.2,
+  "q_epsilon": 0.2,
+  "q_epsilon_min": 0.02,
+  "q_epsilon_decay": 0.999,
+  "seed": 2026
+}

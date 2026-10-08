@@ -1,0 +1,23 @@
+Equation,Parameter,Estimate,p-value,H&T (2021)
+Output gap equation,$C^y$,0.3069966369569673,0.10110053599797192,0.3834
+Output gap equation,"$a^y_{y,1}$",0.977454375545922,3.683434684489086e-29,0.9084
+Output gap equation,"$a^y_{\pi,1}$",-0.02284855885937946,0.7786595544516752,-0.1437
+Output gap equation,"$a^y_{i,1}$",-0.049869955573605455,0.1684990408058348,0.2726
+Output gap equation,"$a^y_{i,2}$",,,-0.2896
+Output gap equation,$\bar{R}^2$,0.858774917306275,,
+Output gap equation,MSE,0.21982258139588373,,
+Output gap equation,$\hat\sigma^2_{\varepsilon_1}$,0.23170488309295853,,
+Output gap equation,DW,1.7253772547280695,,
+Output gap equation,LM(1),1.7254575554456006,0.18899205080983084,
+Inflation equation,$C^\pi$,0.12748387727065233,0.09156578148109111,0.1035
+Inflation equation,"$a^\pi_{y,0}$",-0.06418357941285957,0.15947154150855924,-0.0655
+Inflation equation,"$a^\pi_{y,1}$",0.2086345986316801,0.002236824665988485,0.197
+Inflation equation,"$a^\pi_{y,2}$",-0.10935513653407695,0.02303618959678256,-0.1121
+Inflation equation,"$a^\pi_{\pi,1}$",1.2914170995254863,4.1143685806431196e-19,1.297
+Inflation equation,"$a^\pi_{\pi,2}$",-0.31495316087826714,0.005200802840440391,-0.3116
+Inflation equation,"$a^\pi_{i,1}$",-0.016860600457094112,0.2732351940588241,-0.0122
+Inflation equation,$\bar{R}^2$,0.9476649742403674,,
+Inflation equation,MSE,0.031129255480355368,,
+Inflation equation,$\hat\sigma^2_{\varepsilon_2}$,0.03419833700658759,,
+Inflation equation,DW,2.100285483349916,,
+Inflation equation,LM(1),1.6138692729290844,0.2039487533895524,

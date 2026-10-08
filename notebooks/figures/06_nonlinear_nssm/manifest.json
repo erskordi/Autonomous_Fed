@@ -1,0 +1,96 @@
+{
+  "notebook": "06_nonlinear_nssm",
+  "title": "Non-linear economy: the neural state-space model",
+  "exhibits": [
+    {
+      "kind": "table",
+      "number": 1,
+      "label": "Table 6.1",
+      "slug": "nssm_inputs",
+      "title": "Full-information input sequences of the NSSM",
+      "note": "Lag-aligned estimation sample 1988Q1-2007Q2.",
+      "file": "tab_06_01_nssm_inputs.png"
+    },
+    {
+      "kind": "figure",
+      "number": 1,
+      "label": "Figure 6.1",
+      "slug": "nssm_training_loss",
+      "title": "NSSM training loss",
+      "note": "Full-sequence AdamW, learning rate 0.001, weight decay 0.0001, 1000 epochs. Final joint loss 0.7279.",
+      "file": "fig_06_01_nssm_training_loss.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 6.2",
+      "slug": "economy_fit",
+      "title": "Economy fit: mean squared errors of the three fixed economies",
+      "note": "Estimation window, 1988Q1-2007Q2. MSE total is the average of the two equations.",
+      "file": "tab_06_02_economy_fit.png"
+    },
+    {
+      "kind": "figure",
+      "number": 2,
+      "label": "Figure 6.2",
+      "slug": "in_sample_se_output_gap",
+      "title": "Output gap fit: squared errors of the SVAR, the ANN and the NSSM",
+      "note": "Squared one-step errors over 1988Q1-2007Q2.",
+      "file": "fig_06_02_in_sample_se_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 3,
+      "label": "Figure 6.3",
+      "slug": "in_sample_se_inflation",
+      "title": "Inflation fit: squared errors of the SVAR, the ANN and the NSSM",
+      "note": "Inflation fits are conditional on the realised output gap. The NSSM starts from a zero latent state, so its first quarters carry a start-up error.",
+      "file": "fig_06_03_in_sample_se_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 4,
+      "label": "Figure 6.4",
+      "slug": "state_conditioned_inflation",
+      "title": "State-conditioned response surface of inflation in the NSSM",
+      "note": "Latent state and remaining inputs fixed at the anchor quarter 1997Q4; the contemporaneous output gap and the lagged funds rate vary over their estimation-window ranges.",
+      "file": "fig_06_04_state_conditioned_inflation.png"
+    },
+    {
+      "kind": "figure",
+      "number": 5,
+      "label": "Figure 6.5",
+      "slug": "state_conditioned_output_gap",
+      "title": "State-conditioned response surface of the output gap in the NSSM",
+      "note": "Latent state and remaining inputs fixed at the anchor quarter 1997Q4; lagged inflation and the lagged funds rate vary over their estimation-window ranges.",
+      "file": "fig_06_05_state_conditioned_output_gap.png"
+    },
+    {
+      "kind": "table",
+      "number": 3,
+      "label": "Table 6.3",
+      "slug": "oos_error_metrics",
+      "title": "Out-of-sample one-step errors of the three fixed economies, from 2007Q3",
+      "note": "Every economy is held fixed at its estimation-window fit; fits use realised lags and inflation is conditional on the realised output gap. The NSSM's latent state is propagated through the whole sample.",
+      "file": "tab_06_03_oos_error_metrics.png"
+    },
+    {
+      "kind": "figure",
+      "number": 6,
+      "label": "Figure 6.6",
+      "slug": "oos_output_gap",
+      "title": "Output gap out of sample: actual and one-step fits of the three fixed economies",
+      "note": null,
+      "file": "fig_06_06_oos_output_gap.png"
+    },
+    {
+      "kind": "figure",
+      "number": 7,
+      "label": "Figure 6.7",
+      "slug": "oos_inflation",
+      "title": "Inflation out of sample: actual and one-step fits of the three fixed economies",
+      "note": "Fits are conditional on the realised contemporaneous output gap. Reference line: 2 percent.",
+      "file": "fig_06_07_oos_inflation.png"
+    }
+  ]
+}
