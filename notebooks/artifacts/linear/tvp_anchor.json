@@ -24,7 +24,7 @@
   "meta": {
     "anchor_row": 79,
     "anchor": "2007Q2",
-    "vintage": "2026-10-07",
+    "vintage": "2026-10-19",
     "n_draws": 3000,
     "n_burn": 1500,
     "thin": 2,

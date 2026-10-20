@@ -16,14 +16,17 @@ Each notebook loads what earlier ones saved under `artifacts/`, so run them in o
 | 4 | `04_policy_rules.ipynb` | `data/`, `linear/svar_restricted.json` | `rules/static_prescriptions.csv`, `rules/counterfactual_<rule>.csv` |
 | 5 | `05_nonlinear_narx.ipynb` | `data/`, `linear/one_step_fixed.csv` | `nonlinear/narx.pt`, `nonlinear/one_step_narx.csv` |
 | 6 | `06_nonlinear_nssm.ipynb` | `data/`, the one-step fits of 1 and 5 | `nonlinear/nssm.pt`, `nonlinear/one_step_nssm.csv`, `nonlinear/oos_summary.csv` |
-| 7 | `07_rl_environments.ipynb` | `data/`, the four saved economies | `rl/config.json` |
+| 7 | `07_rl_environments.ipynb` | `data/`, the four saved economies | `rl/config.json`, including the economies that pass the transmission check |
 | 8 | `08_rl_ddpg.ipynb` | `rl/config.json`, the four economies | `rl/ddpg/*.pt` |
 | 9 | `09_rl_sac.ipynb` | `rl/config.json`, the four economies | `rl/sac/*.pt` |
 | 10 | `10_rl_qlearning.ipynb` | `rl/config.json`, the four economies | `rl/qlearning/*.pt` |
 | 11 | `11_rl_robustness_comparison.ipynb` | the trained policies of 8 to 10 | nothing (comparison only) |
 
 Notebooks 8 to 10 are independent of each other once 7 has run. Every reinforcement-learning setting is
-defined in notebook 7 and loaded by the others.
+defined in notebook 7 and loaded by the others, including the list of economies the agents train in: notebook 7
+keeps only the economies in which a sustained rate increase lowers inflation (its transmission check). Trained
+cells are saved in a versioned format; after a change of `autofed.rl` that bumps the version, re-run 8 to 10
+before 11.
 
 ## Setup
 

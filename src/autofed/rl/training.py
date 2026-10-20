@@ -29,7 +29,6 @@ import math
 from dataclasses import dataclass
 from typing import Final, Optional
 
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -43,7 +42,7 @@ from torchrl.objectives import DDPGLoss, SACLoss, SoftUpdate, ValueEstimators
 
 from .config import RLConfig
 from .lab import PolicyLab
-from .policies import ACTION_SPEC, OBS_DIM, DeterministicPolicy, TabularQPolicy, TrainedCell, make_ddpg_actor, make_sac_actor
+from .policies import ACTION_SPEC, OBS_DIM, DeterministicPolicy, TabularQPolicy, TrainedCell, make_ddpg_actor, make_sac_actor, obs_dim
 from .transitions import ENV_DEVICE
 
 __all__ = [
@@ -66,11 +65,13 @@ class AgentCandidate:
 
 
 class EpisodeTracker:
-    """H&T (2021) agent-selection bookkeeping over a stream of collected frames.
+    """H&T (2021, pp. 13-14) agent-selection bookkeeping over a stream of collected frames.
 
     Reads the episode return and length that the ``RewardSum`` and ``StepCounter`` transforms attach
-    to every frame, and checkpoints the actor on every n-th episode with reward per step above the
-    search threshold and a length in ``(1, t_max]``.
+    to every frame, and checkpoints the actor on every n-th episode that (i) ended in the stopping
+    band before the truncation horizon, ``1 < ES < t_max``, and (ii) had a reward per step above the
+    selection threshold, ``ER / ES > select_er_es_min``. Episodes collected before learning starts
+    are counted but never checkpointed: the actor has not been updated yet.
 
     Args:
         actor: Module whose ``state_dict`` is checkpointed.
@@ -84,17 +85,18 @@ class EpisodeTracker:
         self.episode_rewards: list[float] = []
         self._qualifying_seen = 0
 
-    def observe(self, frames: TensorDictBase) -> None:
-        """Record the episodes that ended in ``frames``."""
+    def observe(self, frames: TensorDictBase, *, checkpoint: bool = True) -> None:
+        """Record the episodes that ended in ``frames``; checkpoint the qualifying ones if ``checkpoint``."""
         done = frames["next", "done"].reshape(-1)
         if not bool(done.any()):
             return
         cfg = self.config
         returns = frames["next", "episode_reward"].reshape(-1)[done].tolist()
         lengths = frames["next", "step_count"].reshape(-1)[done].tolist()
-        for ER, ES in zip(returns, lengths):
+        terminated = frames["next", "terminated"].reshape(-1)[done].tolist()
+        for ER, ES, reached_band in zip(returns, lengths, terminated):
             self.episode_rewards.append(float(ER))
-            if not (ER / max(ES, 1) > cfg.select_er_es_min_search and 1 < ES <= cfg.t_max):
+            if not checkpoint or not reached_band or not (1 < ES < cfg.t_max) or ER / ES <= cfg.select_er_es_min:
                 continue
             self._qualifying_seen += 1
             if self._qualifying_seen % cfg.candidate_save_every == 0:
@@ -187,8 +189,8 @@ def train_off_policy(agent: OffPolicyAgent, env: EnvBase, config: RLConfig) -> E
         for batch in collector:
             frames = batch.reshape(-1)
             buffer.extend(frames.select(*_REPLAY_KEYS))
-            tracker.observe(frames)
             collected += frames.numel()
+            tracker.observe(frames, checkpoint=collected > config.learning_starts)
             if collected <= config.learning_starts:
                 continue
             for _ in range(frames.numel()):                      # one gradient step per collected frame
@@ -206,18 +208,17 @@ def train_off_policy(agent: OffPolicyAgent, env: EnvBase, config: RLConfig) -> E
 
 def select_best_candidate(lab: PolicyLab, actor: nn.Module, policy: nn.Module, candidates: list[AgentCandidate],
                           env_name: str, *, observation_lag: bool) -> tuple[Optional[AgentCandidate], float]:
-    """Load the candidate with the highest steady-state reward into ``actor``.
+    """Load the candidate with the highest steady-state reward (H&T 2021) into ``actor``.
 
     Returns:
-        ``(candidate, reward)``; ``(None, -inf)`` if there were no candidates, in which case the
-        actor keeps its final weights.
+        ``(candidate, reward)``; ``(None, -inf)`` if there were no candidates or none has a closed-loop
+        steady state, in which case the actor keeps its final weights.
     """
     final_state = copy.deepcopy(actor.state_dict())
-    init = lab.initial_state()
     best_reward, best = -math.inf, None
     for candidate in candidates:
         actor.load_state_dict(candidate.state_dict)
-        reward = lab.steady_state_reward(policy, env_name, observation_lag=observation_lag, init_state=init)
+        reward = lab.steady_state_reward(policy, env_name, observation_lag=observation_lag)
         if reward > best_reward:
             best_reward, best = reward, candidate
     actor.load_state_dict(best.state_dict if best is not None else final_state)
@@ -237,50 +238,56 @@ def train_ddpg_cell(lab: PolicyLab, env_name: str, obs_spec: str, policy_variant
     checkpoint of each by steady-state reward, and keeps the best architecture.
 
     Returns:
-        ``(cell, log)``: the winning cell and one row per architecture with its steady-state reward
-        and number of candidate checkpoints.
+        ``(cell, log)``: the winning cell and one row per architecture with its steady-state reward,
+        its stochastic evaluation reward and the number of candidate checkpoints.
     """
-    cfg, obs_lag = lab.config, _obs_lag(obs_spec)
+    cfg, obs_lag, lagged_rate = lab.config, _obs_lag(obs_spec), lab.config.observes_rate
     actor_grid = (1,) if policy_variant == "linear" else cfg.actor_node_grid
     best: Optional[TrainedCell] = None
     rows = []
     for critic_nodes in cfg.critic_node_grid:
         for actor_nodes in actor_grid:
             torch.manual_seed(cfg.seed)
-            agent = build_ddpg_agent(OBS_DIM[obs_spec], policy_variant, actor_nodes, critic_nodes, cfg)
+            agent = build_ddpg_agent(obs_dim(obs_spec, lagged_rate), policy_variant, actor_nodes, critic_nodes, cfg)
             tracker = train_off_policy(agent, lab.make_env(env_name, observation_lag=obs_lag, num_envs=cfg.num_envs), cfg)
             policy = DeterministicPolicy(agent.actor)
             _, reward = select_best_candidate(lab, agent.actor, policy, tracker.candidates, env_name, observation_lag=obs_lag)
+            evaluated = lab.evaluation_reward(policy, env_name, observation_lag=obs_lag)
             rows.append({"Critic nodes": critic_nodes, "Actor nodes": actor_nodes, "SS reward": reward,
-                         "Candidates": len(tracker.candidates), "Episodes": len(tracker.episode_rewards)})
+                         "Eval reward": evaluated, "Candidates": len(tracker.candidates),
+                         "Episodes": len(tracker.episode_rewards)})
             if best is None or reward > best.steady_state_reward:
                 best = TrainedCell("DDPG", env_name, obs_spec, policy_variant, critic_nodes, actor_nodes, reward, policy,
-                                   cfg.action_high, list(tracker.episode_rewards))
+                                   cfg.action_high, list(tracker.episode_rewards), lagged_rate, evaluated)
     assert best is not None
     return best, pd.DataFrame(rows)
 
 
 def train_sac_cell(lab: PolicyLab, env_name: str, obs_spec: str) -> TrainedCell:
     """Train one SAC cell and select its best checkpoint by steady-state reward."""
-    cfg, obs_lag = lab.config, _obs_lag(obs_spec)
+    cfg, obs_lag, lagged_rate = lab.config, _obs_lag(obs_spec), lab.config.observes_rate
     torch.manual_seed(cfg.seed)
-    agent = build_sac_agent(OBS_DIM[obs_spec], cfg)
+    agent = build_sac_agent(obs_dim(obs_spec, lagged_rate), cfg)
     tracker = train_off_policy(agent, lab.make_env(env_name, observation_lag=obs_lag, num_envs=cfg.num_envs), cfg)
     policy = DeterministicPolicy(agent.actor)
     _, reward = select_best_candidate(lab, agent.actor, policy, tracker.candidates, env_name, observation_lag=obs_lag)
+    evaluated = lab.evaluation_reward(policy, env_name, observation_lag=obs_lag)
     return TrainedCell("SAC", env_name, obs_spec, "nonlinear", cfg.sac_hidden[0], cfg.sac_hidden[0], reward, policy,
-                       cfg.action_high, list(tracker.episode_rewards))
+                       cfg.action_high, list(tracker.episode_rewards), lagged_rate, evaluated)
 
 
 @torch.no_grad()
 def train_q_cell(lab: PolicyLab, env_name: str) -> TrainedCell:
-    """Tabular Q-learning (Watkins, 1989) on the no-lag observation.
+    """Tabular Q-learning (Watkins, 1989) on the no-lag observation ``(y, pi)``.
 
-    Epsilon-greedy exploration with per-episode decay; the update does not bootstrap past the end of
-    an episode. The reported statistic is the mean return of the last 200 training episodes.
+    Epsilon-greedy exploration with per-episode decay and a visit-count step size
+    ``q_alpha / n ** q_alpha_decay``. The target bootstraps through truncation at ``t_max`` and not
+    through termination in the band, as the TD(0) targets of DDPG and SAC do. The policy does not read
+    ``i_{t-1}``: the table is over ``(y, pi)`` only. The selection statistic is the same steady-state
+    reward as for the other algorithms, so the three are comparable.
     """
     cfg = lab.config
-    env = lab.make_env(env_name, observation_lag=False)
+    env = lab.make_env(env_name, observation_lag=False, observe_rate=False)
     policy = TabularQPolicy(cfg.action_high)
     rng = torch.Generator().manual_seed(cfg.seed)
     n_actions = policy.action_grid.numel()
@@ -301,15 +308,20 @@ def train_q_cell(lab: PolicyLab, env_name: str) -> TrainedCell:
 
             reward = stepped["next", "reward"][..., 0].to(torch.float64)
             done = stepped["next", "done"][..., 0]
+            terminated = stepped["next", "terminated"][..., 0]
             iy, ipi = policy.discretise(obs)
             iy2, ipi2 = policy.discretise(stepped["next", "observation"])
-            target = reward + cfg.gamma * policy.Q[iy2, ipi2].max(dim=-1).values * (~done)
-            policy.Q[iy, ipi, a_idx] += cfg.q_alpha * (target - policy.Q[iy, ipi, a_idx])
+            target = reward + cfg.gamma * policy.Q[iy2, ipi2].max(dim=-1).values * (~terminated)
+            policy.N[iy, ipi, a_idx] += 1
+            alpha = cfg.q_alpha / policy.N[iy, ipi, a_idx].to(torch.float64) ** cfg.q_alpha_decay
+            policy.Q[iy, ipi, a_idx] += alpha * (target - policy.Q[iy, ipi, a_idx])
 
             total += float(reward)
             if bool(done):
                 break
         epsilon = max(cfg.q_epsilon_min, epsilon * cfg.q_epsilon_decay)
         rewards.append(total)
-    return TrainedCell("Q-learning", env_name, "x1", None, None, None, float(np.mean(rewards[-200:])), policy,
-                       cfg.action_high, rewards)
+    reward = lab.steady_state_reward(policy, env_name, observation_lag=False, observe_rate=False)
+    evaluated = lab.evaluation_reward(policy, env_name, observation_lag=False, observe_rate=False)
+    return TrainedCell("Q-learning", env_name, "x1", None, None, None, reward, policy, cfg.action_high, rewards,
+                       False, evaluated)

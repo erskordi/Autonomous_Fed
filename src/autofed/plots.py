@@ -140,20 +140,28 @@ def irf_grid(responses: np.ndarray, names: Sequence[str], *, labels: Mapping[str
 
 
 def policy_paths(paths: Mapping[str, pd.DataFrame], *, pi_star: float = 2.0,
-                 shade: tuple[str, str] | None = None) -> Figure:
+                 shade: tuple[str, str] | None = None, relative_time: bool = False) -> Figure:
     """Three stacked panels (policy rate, inflation, output gap), one line per policy.
 
     Args:
         paths: Frames with columns ``i``, ``pi`` and ``y`` keyed by policy name; ``"Actual"`` is drawn
             in black on top.
         pi_star: Inflation target, drawn as the reference line of the inflation panel.
-        shade: Quarters to shade, e.g. the estimation window.
+        shade: Quarters to shade, e.g. the estimation window (only with calendar time).
+        relative_time: Label the x-axis in quarters since the start of the path instead of calendar
+            quarters; for simulated paths, which share only their initial conditions with the data.
     """
     if not paths:
         raise ValueError("at least one path is required")
-    fig, axes = plt.subplots(3, 1, figsize=(10.5, 8.2), sharex=True)
+    # Three panels and a thin fourth row that holds the legend, so no line, caption or note is covered.
+    fig, all_axes = plt.subplots(4, 1, figsize=(10.5, 8.8), gridspec_kw={"height_ratios": [1.0, 1.0, 1.0, 0.14]})
+    axes, legend_ax = all_axes[:3], all_axes[3]
+    for ax in axes[1:]:
+        ax.sharex(axes[0])
+    for ax in axes[:-1]:
+        ax.tick_params(labelbottom=False)
     for ax, column, reference in zip(axes, ("i", "pi", "y"), (0.0, pi_star, 0.0)):
-        if shade is not None:
+        if shade is not None and not relative_time:
             shade_window(ax, *shade)
         ax.axhline(reference, color=COLORS["grey"], lw=0.7)
         extra = 0
@@ -161,15 +169,18 @@ def policy_paths(paths: Mapping[str, pd.DataFrame], *, pi_star: float = 2.0,
             known = name in SERIES_COLORS
             if known:
                 color, style = SERIES_COLORS[name], "-" if name == "Actual" or len(paths) <= 4 else "--"
-            else:                                   # learned policies: colours the fixed series do not use
+            else:                                   # learned policies: colours and dashes the fixed series do not use
                 color = COLORS[_EXTRA_COLORS[extra % len(_EXTRA_COLORS)]]
-                style = "-" if extra < len(_EXTRA_COLORS) else "-."
+                style = _LINESTYLES[(extra // len(_EXTRA_COLORS)) % len(_LINESTYLES)] if extra >= len(_EXTRA_COLORS) else "-"
                 extra += 1
-            ax.plot(timestamps(path.index), path[column], color=color, ls=style,
+            x = np.arange(len(path)) if relative_time else timestamps(path.index)
+            ax.plot(x, path[column], color=color, ls=style,
                     lw=1.8 if name == "Actual" else 1.1 if known else 1.5, zorder=3 if name == "Actual" else 2, label=name)
         ax.set_ylabel(VARIABLE_LABELS[column])
-    axes[-1].set_xlabel("Quarter")
-    axes[0].legend(loc="upper right", ncol=min(len(paths), 4))
+    axes[-1].set_xlabel("Quarters since the start of the path" if relative_time else "Quarter")
+    handles, labels = axes[0].get_legend_handles_labels()
+    legend_ax.axis("off")
+    legend_ax.legend(handles, labels, loc="center", ncol=min(len(paths), 4), frameon=False, borderaxespad=0.0)
     return fig
 
 
@@ -203,20 +214,24 @@ def surface(X: np.ndarray, Y: np.ndarray, Z: np.ndarray, *, xlabel: str, ylabel:
 
 
 def policy_surface_grid(panels: Mapping[str, tuple[np.ndarray, np.ndarray, np.ndarray]], *, rate_max: float,
-                        pi_star: float = 2.0, ncols: int = 2) -> Figure:
-    """Filled contours of reaction functions over ``(inflation, output gap)``, one panel per policy.
+                        pi_star: float = 2.0, ncols: int = 2, style: str = "contour") -> Figure:
+    """Reaction functions over ``(inflation, output gap)``, one panel per policy, on one colour scale.
 
     Args:
         panels: Panel title to ``(PI, Y, RATE)`` grids, e.g. from ``autofed.rl.policy_surface``.
-        rate_max: Upper end of the common colour scale, percent.
+        rate_max: Upper end of the common colour scale, percent; the rate cannot leave ``[0, rate_max]``.
         pi_star: Inflation target, drawn as a reference line.
         ncols: Number of columns of the panel grid.
+        style: ``"contour"`` for filled contours of a smooth policy, ``"mesh"`` to draw the grid values
+            as cells without interpolation (a tabular policy).
 
     Raises:
-        ValueError: If no panel is given.
+        ValueError: If no panel is given or ``style`` is unknown.
     """
     if not panels:
         raise ValueError("at least one panel is required")
+    if style not in ("contour", "mesh"):
+        raise ValueError(f"style must be 'contour' or 'mesh', got {style!r}")
     n = len(panels)
     ncols = min(ncols, n)
     nrows = -(-n // ncols)
@@ -224,7 +239,10 @@ def policy_surface_grid(panels: Mapping[str, tuple[np.ndarray, np.ndarray, np.nd
     levels = np.linspace(0.0, rate_max, 16)
     filled = None
     for ax, (title, (PI, Y, RATE)) in zip(axes.ravel(), panels.items()):
-        filled = ax.contourf(PI, Y, RATE, levels=levels, cmap="viridis", extend="both")
+        if style == "contour":
+            filled = ax.contourf(PI, Y, RATE, levels=levels, cmap="viridis", extend="neither")
+        else:
+            filled = ax.pcolormesh(PI, Y, RATE, cmap="viridis", vmin=0.0, vmax=rate_max, shading="nearest")
         ax.axvline(pi_star, color="black", lw=0.6, ls="--", alpha=0.5)
         ax.axhline(0.0, color="black", lw=0.6, ls="--", alpha=0.5)
         ax.set_title(title, fontsize=9.5)

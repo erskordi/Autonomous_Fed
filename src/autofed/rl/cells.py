@@ -32,11 +32,11 @@ from typing import Any, Optional
 import torch
 
 from ..exceptions import ArtifactError
-from .policies import OBS_DIM, DeterministicPolicy, TabularQPolicy, TrainedCell, make_ddpg_actor, make_sac_actor
+from .policies import DeterministicPolicy, TabularQPolicy, TrainedCell, make_ddpg_actor, make_sac_actor, obs_dim
 
 __all__ = ["load_cell", "load_cells", "save_cell", "save_cells"]
 
-_FORMAT_VERSION = 1
+_FORMAT_VERSION = 2
 
 
 def save_cell(cell: TrainedCell, path: str | os.PathLike[str], *, sac_hidden: tuple[int, ...] = (64, 64)) -> Path:
@@ -49,6 +49,7 @@ def save_cell(cell: TrainedCell, path: str | os.PathLike[str], *, sac_hidden: tu
         "obs_spec": cell.obs_spec, "policy_variant": cell.policy_variant, "critic_nodes": cell.critic_nodes,
         "actor_nodes": cell.actor_nodes, "steady_state_reward": float(cell.steady_state_reward),
         "action_high": float(cell.action_high), "training_rewards": [float(r) for r in cell.training_rewards],
+        "lagged_rate": bool(cell.lagged_rate), "eval_reward": float(cell.eval_reward),
         "sac_hidden": list(sac_hidden), "state": {k: v.detach().cpu() for k, v in module.state_dict().items()},
     }
     torch.save(payload, target)
@@ -69,24 +70,23 @@ def load_cell(path: str | os.PathLike[str]) -> TrainedCell:
     except Exception as exc:  # torch raises several unrelated types for a damaged file
         raise ArtifactError(f"{source} could not be read: {exc}") from exc
     if not isinstance(payload, dict) or payload.get("kind") != "cell" or payload.get("version") != _FORMAT_VERSION:
-        raise ArtifactError(f"{source} is not a trained cell of format version {_FORMAT_VERSION}")
+        raise ArtifactError(f"{source} is not a trained cell of format version {_FORMAT_VERSION}; "
+                            "re-run the algorithm notebook that trains it")
 
-    algo, state = payload["algo"], payload["state"]
+    algo, state, lagged_rate = payload["algo"], payload["state"], bool(payload["lagged_rate"])
     if algo == "Q-learning":
-        policy: torch.nn.Module = TabularQPolicy(
-            payload["action_high"], n_bins=tuple(int(b) for b in state["bins"].tolist()),
-            action_grid=state["action_grid"].tolist(), obs_low=tuple(state["obs_low"].tolist()),
-            obs_high=tuple(state["obs_high"].tolist()))
+        policy: torch.nn.Module = TabularQPolicy(payload["action_high"], action_grid=state["action_grid"].tolist(),
+                                                 y_edges=state["y_edges"].tolist(), pi_edges=state["pi_edges"].tolist())
         policy.load_state_dict(state)
     else:
-        obs_dim = OBS_DIM[payload["obs_spec"]]
-        actor = (make_ddpg_actor(obs_dim, payload["policy_variant"], int(payload["actor_nodes"])) if algo == "DDPG"
-                 else make_sac_actor(obs_dim, payload["sac_hidden"]))
+        width = obs_dim(payload["obs_spec"], lagged_rate)
+        actor = (make_ddpg_actor(width, payload["policy_variant"], int(payload["actor_nodes"])) if algo == "DDPG"
+                 else make_sac_actor(width, payload["sac_hidden"]))
         actor.load_state_dict(state)
         policy = DeterministicPolicy(actor)
     return TrainedCell(algo, payload["env_name"], payload["obs_spec"], payload["policy_variant"], payload["critic_nodes"],
                        payload["actor_nodes"], payload["steady_state_reward"], policy.eval(), payload["action_high"],
-                       list(payload["training_rewards"]))
+                       list(payload["training_rewards"]), lagged_rate, float(payload.get("eval_reward", float("nan"))))
 
 
 def save_cells(cells: Iterable[TrainedCell], directory: str | os.PathLike[str], *,

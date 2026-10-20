@@ -218,11 +218,35 @@ def render_table(
     return fig
 
 
-def render_listing(text: str, *, caption: str, note: str | None = None, fontsize: float = 7.5) -> Figure:
-    """Draw a verbatim, monospaced text block (for library-generated summaries) and return the figure."""
+#: Characters that make up a horizontal rule in a text summary, with the line width each is drawn at.
+_RULE_CHARS: dict[str, float] = {"=": 1.0, "═": 1.0, "-": 0.55, "─": 0.55, "_": 0.55}
+#: Advance width of DejaVu Sans Mono, in em.
+_MONO_ADVANCE = 0.602
+
+
+def _rule_span(line: str) -> tuple[int, int, float] | None:
+    """``(first, last, line width)`` of a line that is only a horizontal rule, else ``None``.
+
+    Summary tables from estimation libraries draw their rules as runs of ``=`` or ``-``; rasterised
+    at small sizes those glyphs leave gaps and read as dashed lines, so such a line is drawn as a line.
+    """
+    stripped = line.strip()
+    if len(stripped) < 3 or not all(ch in _RULE_CHARS for ch in stripped):
+        return None
+    first = len(line) - len(line.lstrip())
+    return first, first + len(stripped), max(_RULE_CHARS[ch] for ch in stripped)
+
+
+def render_listing(text: str, *, caption: str, note: str | None = None, fontsize: float = 9.0) -> Figure:
+    """Draw a verbatim, monospaced text block (for library-generated summaries) and return the figure.
+
+    Lines made only of rule characters (``=`` or ``-``) are drawn as horizontal lines rather than as
+    glyphs, over the columns they occupy.
+    """
     lines = text.rstrip("\n").expandtabs(4).split("\n")
     em = fontsize / 72.0
-    width = max(max((len(line) for line in lines), default=10), 40) * 0.602 * em
+    char_w = _MONO_ADVANCE * em
+    width = max(max((len(line) for line in lines), default=10), 40) * char_w
     wrap_at = max(int(width / (0.56 * em * 1.2)), 30)
     caption_lines = textwrap.wrap(caption, width=wrap_at) or [""]
     note_lines = textwrap.wrap(note, width=int(wrap_at * 1.15)) if note else []
@@ -244,8 +268,14 @@ def render_listing(text: str, *, caption: str, note: str | None = None, fontsize
     top = y - caption_h
     ax.plot([x0, x0 + width], [top, top], color="black", lw=1.1)
     for k, line in enumerate(lines):
-        ax.text(x0, top - (k + 1.0) * line_h, line, fontsize=fontsize, family="DejaVu Sans Mono", ha="left",
-                va="center")
+        y_line = top - (k + 1.0) * line_h
+        rule = _rule_span(line)
+        if rule is not None:
+            first, last, lw = rule
+            ax.plot([x0 + first * char_w, x0 + last * char_w], [y_line, y_line], color="black", lw=lw,
+                    solid_capstyle="butt")
+            continue
+        ax.text(x0, y_line, line, fontsize=fontsize, family="DejaVu Sans Mono", ha="left", va="center")
     bottom = top - body_h
     ax.plot([x0, x0 + width], [bottom, bottom], color="black", lw=1.1)
     for k, line in enumerate(note_lines):

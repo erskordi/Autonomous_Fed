@@ -48,7 +48,8 @@ def fit_unrestricted_svar(sample: np.ndarray, *, names: Sequence[str] = NAMES) -
     Raises:
         ValueError: If the sample is shorter than :data:`MIN_WINDOW` rows.
     """
-    from cultivars.multivariate import VAR, RecursiveSVAR
+    from cultivars.multivariate.reduced_form.vector_autoregression import VAR
+    from cultivars.multivariate.structural.zero_restrictions import RecursiveSVAR
 
     if sample.shape[0] < MIN_WINDOW:
         raise ValueError(f"a VAR(2) in three variables needs at least {MIN_WINDOW} rows, got {sample.shape[0]}")

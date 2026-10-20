@@ -8,7 +8,7 @@
       "label": "Table 0.1",
       "slug": "fred_series",
       "title": "FRED series and transformations",
-      "note": "All series are requested at quarterly frequency from 1976-07-01. Retrieved 2026-10-07.",
+      "note": "All series are requested at quarterly frequency from 1976-07-01. Retrieved 2026-10-19.",
       "file": "tab_00_01_fred_series.png"
     },
     {
@@ -26,7 +26,7 @@
       "label": "Figure 0.1",
       "slug": "observables",
       "title": "Output gap, inflation and the federal funds rate",
-      "note": "Source: FRED (GDPC1, GDPPOT, GDPDEF, FEDFUNDS), retrieved 2026-10-07. Reference lines: zero output gap and 2 percent inflation.",
+      "note": "Source: FRED (GDPC1, GDPPOT, GDPDEF, FEDFUNDS), retrieved 2026-10-19. Reference lines: zero output gap and 2 percent inflation.",
       "file": "fig_00_01_observables.png"
     },
     {

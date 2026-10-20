@@ -3,15 +3,6 @@
   "title": "Reinforcement learning: environments and reference rules",
   "exhibits": [
     {
-      "kind": "table",
-      "number": 1,
-      "label": "Table 7.1",
-      "slug": "rl_settings",
-      "title": "Settings of the reinforcement-learning exercise",
-      "note": "Field names of autofed.rl.RLConfig, whose documentation defines each. Rates and deviations in percent and percentage points; node grids are the hidden sizes searched.",
-      "file": "tab_07_01_rl_settings.png"
-    },
-    {
       "kind": "figure",
       "number": 1,
       "label": "Figure 7.1",
@@ -22,21 +13,39 @@
     },
     {
       "kind": "table",
-      "number": 2,
-      "label": "Table 7.2",
+      "number": 1,
+      "label": "Table 7.1",
       "slug": "economies",
       "title": "The four economies as reinforcement-learning environments",
       "note": "Every environment passed torchrl.envs.utils.check_env_specs with one and with three parallel copies. Shock standard deviations in percentage points.",
-      "file": "tab_07_02_economies.png"
+      "file": "tab_07_01_economies.png"
+    },
+    {
+      "kind": "table",
+      "number": 2,
+      "label": "Table 7.2",
+      "slug": "transmission",
+      "title": "Transmission check: response to a sustained one-point rate increase",
+      "note": "Average response of the output gap (dy) and inflation (dpi) h quarters after the policy rate is raised by one percentage point and held there, shocks switched off, over every training-sample start. Passes: inflation is lower at h = 20.",
+      "file": "tab_07_02_transmission.png"
     },
     {
       "kind": "table",
       "number": 3,
       "label": "Table 7.3",
+      "slug": "rl_settings",
+      "title": "Settings of the reinforcement-learning exercise",
+      "note": "Field names of autofed.rl.RLConfig, whose documentation defines each. Rates and deviations in percent and percentage points; node grids are the hidden sizes searched; economies are those that passed the transmission check.",
+      "file": "tab_07_03_rl_settings.png"
+    },
+    {
+      "kind": "table",
+      "number": 4,
+      "label": "Table 7.4",
       "slug": "reference_rules",
       "title": "Reference rules",
       "note": "TR93: Taylor (1993). NPP: Nikolsko-Rzhevskyy, Papell & Prodan (2018). BA: balanced approach.",
-      "file": "tab_07_03_reference_rules.png"
+      "file": "tab_07_04_reference_rules.png"
     },
     {
       "kind": "figure",
@@ -44,7 +53,7 @@
       "label": "Figure 7.2",
       "slug": "reference_paths_svar",
       "title": "Reference rules simulated in the SVAR economy",
-      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual.",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual: the Actual line shares only its first two quarters with the simulations.",
       "file": "fig_07_02_reference_paths_svar.png"
     },
     {
@@ -53,7 +62,7 @@
       "label": "Figure 7.3",
       "slug": "reference_paths_tvp_svar_sv",
       "title": "Reference rules simulated in the TVP-SVAR-SV economy",
-      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual.",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual: the Actual line shares only its first two quarters with the simulations.",
       "file": "fig_07_03_reference_paths_tvp_svar_sv.png"
     },
     {
@@ -62,7 +71,7 @@
       "label": "Figure 7.4",
       "slug": "reference_paths_narx",
       "title": "Reference rules simulated in the NARX economy",
-      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual.",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual: the Actual line shares only its first two quarters with the simulations.",
       "file": "fig_07_04_reference_paths_narx.png"
     },
     {
@@ -71,17 +80,17 @@
       "label": "Figure 7.5",
       "slug": "reference_paths_nssm",
       "title": "Reference rules simulated in the NSSM economy",
-      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual.",
+      "note": "Simulated from the first two estimation-window quarters under freshly drawn shocks; every rule faces the same shocks. Not a historical counterfactual: the Actual line shares only its first two quarters with the simulations.",
       "file": "fig_07_05_reference_paths_nssm.png"
     },
     {
       "kind": "table",
-      "number": 4,
-      "label": "Table 7.4",
+      "number": 5,
+      "label": "Table 7.5",
       "slug": "reference_loss",
       "title": "Loss decomposition of the reference rules in each economy",
-      "note": "Mean squared deviations over the simulated quarters; Loss weights them as the reward does. The Actual row is the same statistic on the realised data and is a reference level, not a like-for-like comparison.",
-      "file": "tab_07_04_reference_loss.png"
+      "note": "Mean squared deviations over the simulated quarters; Loss weights them as the reward does. Penalty is the mean footnote-13 term, so Loss + Penalty is minus the mean reward. The Actual row is the same statistic on the realised data and is a reference level, not a like-for-like comparison.",
+      "file": "tab_07_05_reference_loss.png"
     }
   ]
 }

@@ -179,3 +179,7 @@ cython_debug/
 node_modules/
 .coverage
 conda-dist/
+
+# Finder / sync duplicates
+* 2.*
+*/notebooks 2/

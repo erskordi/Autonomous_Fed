@@ -124,6 +124,7 @@ class NotebookSession:
         self._watch_cells()
         if apply_style:
             style.apply()
+            self._inline_retina()
         if clean:
             for pattern in ("fig_*", "tab_*", "manifest.json"):
                 for stale in self.figure_dir.glob(pattern):
@@ -229,12 +230,13 @@ class NotebookSession:
         self._finish(fig, exhibit, show, fixed_layout=True)
         return exhibit
 
-    def listing(self, text: str, slug: str, title: str, *, note: str | None = None, fontsize: float = 7.5,
+    def listing(self, text: str, slug: str, title: str, *, note: str | None = None, fontsize: float = 9.0,
                 show: bool = True) -> Exhibit:
         """Number, render, save and display a verbatim text block as a table exhibit.
 
         For estimation summaries that a library returns as formatted text. The text is also written
-        to a ``.txt`` file of the same name.
+        to a ``.txt`` file of the same name. The body is set in the monospaced face at the same size
+        as the body of :meth:`table`, with the summary's rule lines drawn as rules.
         """
         if not isinstance(text, str) or not text.strip():
             raise ValueError("listing text must be a non-empty string")
@@ -284,6 +286,20 @@ class NotebookSession:
         target = notebook_to_pdf(notebook, self.workspace.documents, engine=engine)
         print(f"Saved {target.relative_to(self.workspace.root)}")
         return target
+
+    def _inline_retina(self) -> None:
+        """Render inline figures at twice the screen resolution, so small text stays crisp on screen.
+
+        The inline backend rasterises a figure at ``figure.dpi`` and the notebook front end then
+        scales the image to the cell width; at that resolution the 9-point text of the exhibits, and
+        the monospaced estimation summaries in particular, renders unevenly. The ``retina`` format
+        doubles the raster and tells the front end its intended size. Saved images are unaffected.
+        """
+        shell = self._shell()
+        if shell is None:
+            return
+        with contextlib.suppress(Exception):                      # not the inline backend: nothing to set
+            shell.run_line_magic("config", "InlineBackend.figure_format = 'retina'")
 
     @staticmethod
     def _shell() -> Any:

@@ -37,7 +37,7 @@ from .transitions import ENV_DEVICE, ENV_DTYPE, Transition
 
 __all__ = ["MonetaryEnv", "episodic"]
 
-_INIT_KEYS = ("y_t", "y_tm1", "pi_t", "pi_tm1", "i_t", "i_tm1")
+_INIT_KEYS = ("y_t", "y_tm1", "pi_t", "pi_tm1", "i_tm1")
 
 
 class MonetaryEnv(EnvBase):
@@ -54,7 +54,8 @@ class MonetaryEnv(EnvBase):
 
     TensorDict layout (leading batch dimension ``N = num_envs``)::
 
-        observation  (N, 2 | 4) float32   policy input, x1 = (y, pi) or x2 = (y, y_lag, pi, pi_lag)
+        observation  (N, D)     float32   policy input, x1 = (y, pi) or x2 = (y, y_lag, pi, pi_lag),
+                                          followed by i_{t-1} when ``observe_rate`` is set
         lags         (N, 6)     float64   (y_t, y_{t-1}, pi_t, pi_{t-1}, i_{t-1}, i_{t-2}); state
         hidden       (N, H)     float64   latent state, only for economies that have one; state
         macro        (N, 3)     float64   (pi_{t+1}, y_{t+1}, i_t) after a step, for logging
@@ -63,44 +64,55 @@ class MonetaryEnv(EnvBase):
     Args:
         transition: The economy.
         data: ``(T, 3)`` training observations in ``(y, pi, i)`` column order; episodes start from a
-            uniformly drawn pair of consecutive quarters.
+            uniformly drawn quarter of ``data`` (from the third on) with its two predecessors as lags.
         config: Reward, bounds and clamps.
         observation_lag: Use the ``x2`` observation instead of ``x1``.
+        observe_rate: Append ``i_{t-1}`` to the observation, so that the smoothing term of the reward
+            is a function of the observed state. ``None`` takes ``config.observes_rate``.
         num_envs: Number of parallel copies.
         init_state: If given, every reset starts from this state instead of a draw from ``data``.
-            Keys: ``pi_t, pi_tm1, y_t, y_tm1, i_t, i_tm1``; ``i_t`` is not used (see the timing note).
+            Keys: ``y_t, y_tm1, pi_t, pi_tm1, i_tm1`` and optionally ``i_tm2`` (``i_tm1`` when absent);
+            ``i_t``, if present, is ignored (see the timing note).
         terminate_in_band: Emit ``terminated=True`` inside the stopping band. Disable for
             fixed-horizon paths.
+        noise_scale: Multiplier on the standard-normal shocks; ``0`` gives the deterministic economy.
         seed: Seed of the environment's own shock and initial-state generator; the configured seed
             when omitted.
 
     Raises:
-        ValueError: If ``num_envs`` is not positive or ``data`` is not ``(T >= 3, 3)``.
+        ValueError: If ``num_envs`` is not positive, ``noise_scale`` is negative or ``data`` is not
+            ``(T >= 3, 3)``.
         KeyError: If ``init_state`` lacks a key.
     """
 
     def __init__(self, transition: Transition, data: torch.Tensor, config: RLConfig, *, observation_lag: bool = False,
-                 num_envs: int = 1, init_state: Optional[dict[str, float]] = None, terminate_in_band: bool = True,
-                 seed: Optional[int] = None) -> None:
+                 observe_rate: Optional[bool] = None, num_envs: int = 1, init_state: Optional[dict[str, float]] = None,
+                 terminate_in_band: bool = True, noise_scale: float = 1.0, seed: Optional[int] = None) -> None:
         if num_envs < 1:
             raise ValueError(f"num_envs must be positive, got {num_envs}")
         if data.ndim != 2 or data.shape[1] != 3 or data.shape[0] < 3:
             raise ValueError(f"data must have shape (T >= 3, 3), got {tuple(data.shape)}")
+        if not (math.isfinite(noise_scale) and noise_scale >= 0.0):
+            raise ValueError(f"noise_scale must be finite and non-negative, got {noise_scale!r}")
         super().__init__(device=ENV_DEVICE, batch_size=torch.Size([num_envs]))
         self.transition = transition
         self.config = config
         self.observation_lag = bool(observation_lag)
+        self.observe_rate = config.observes_rate if observe_rate is None else bool(observe_rate)
         self.terminate_in_band = bool(terminate_in_band)
+        self.noise_scale = float(noise_scale)
         self._data = data.to(dtype=ENV_DTYPE, device=ENV_DEVICE)
         self._init_lags: Optional[torch.Tensor] = None
+        self._init_index: Optional[int] = None
         if init_state is not None:
             missing = [k for k in _INIT_KEYS if k not in init_state]
             if missing:
                 raise KeyError(f"init_state is missing {missing}")
-            # The rate of quarter t is the agent's first decision, so the lag slots hold i_{t-1}.
-            order = ("y_t", "y_tm1", "pi_t", "pi_tm1", "i_tm1", "i_tm1")
-            self._init_lags = torch.tensor([float(init_state[k]) for k in order], dtype=ENV_DTYPE)
-            self._init_rate = float(init_state["i_t"])
+            # The rate of quarter t is the agent's first decision, so the lag slots hold i_{t-1}, i_{t-2}.
+            values = [float(init_state[k]) for k in ("y_t", "y_tm1", "pi_t", "pi_tm1", "i_tm1")]
+            values.append(float(init_state.get("i_tm2", init_state["i_tm1"])))
+            self._init_lags = torch.tensor(values, dtype=ENV_DTYPE)
+            self._init_index = int(init_state.get("index", 1))
         self._rng = torch.Generator(device="cpu")
         self._rng.manual_seed(int(config.seed if seed is None else seed))
         self._make_specs()
@@ -108,7 +120,7 @@ class MonetaryEnv(EnvBase):
     @property
     def obs_dim(self) -> int:
         """Width of the policy observation."""
-        return 4 if self.observation_lag else 2
+        return (4 if self.observation_lag else 2) + (1 if self.observe_rate else 0)
 
     def _make_specs(self) -> None:
         bs, cfg = self.batch_size, self.config
@@ -116,6 +128,8 @@ class MonetaryEnv(EnvBase):
             y_b = (-cfg.macro_clamp_y, cfg.macro_clamp_y)
             pi_b = (cfg.pi_star - cfg.macro_clamp_pi, cfg.pi_star + cfg.macro_clamp_pi)
             bounds = (y_b, y_b, pi_b, pi_b) if self.observation_lag else (y_b, pi_b)
+            if self.observe_rate:
+                bounds = (*bounds, (0.0, cfg.action_high))
             low = torch.tensor([b[0] for b in bounds], dtype=torch.float32).expand(*bs, -1)
             high = torch.tensor([b[1] for b in bounds], dtype=torch.float32).expand(*bs, -1)
             obs_spec: Any = Bounded(low=low, high=high, shape=(*bs, self.obs_dim), dtype=torch.float32)
@@ -134,6 +148,8 @@ class MonetaryEnv(EnvBase):
 
     def _observation(self, lags: torch.Tensor) -> torch.Tensor:
         cols = [0, 1, 2, 3] if self.observation_lag else [0, 2]
+        if self.observe_rate:
+            cols.append(4)
         return lags[..., cols].to(torch.float32)
 
     def _reset(self, tensordict: Optional[TensorDictBase] = None, **kwargs: Any) -> TensorDictBase:
@@ -141,18 +157,20 @@ class MonetaryEnv(EnvBase):
         bs = self.batch_size
         if self._init_lags is not None:
             lags = self._init_lags.expand(*bs, -1).clone()
+            idx = torch.full(tuple(bs), int(self._init_index or 0), dtype=torch.long)
         else:
+            # Quarter t is any quarter from the third on; its two predecessors supply the lags. The rate of
+            # quarter t is the agent's first decision, so the rate slots hold i_{t-1} and i_{t-2}.
             idx = torch.randint(2, self._data.shape[0], tuple(bs), generator=self._rng)
-            cur, prev = self._data[idx - 1], self._data[idx - 2]
-            # Quarter t's rate is the agent's first decision; the lag slots hold the rate of quarter t-1.
-            lags = torch.stack([cur[..., 0], prev[..., 0], cur[..., 1], prev[..., 1], prev[..., 2], prev[..., 2]], dim=-1)
+            cur, prev, prev2 = self._data[idx], self._data[idx - 1], self._data[idx - 2]
+            lags = torch.stack([cur[..., 0], prev[..., 0], cur[..., 1], prev[..., 1], prev[..., 2], prev2[..., 2]], dim=-1)
         out = TensorDict(
             {"observation": self._observation(lags), "lags": lags,
              "macro": torch.stack([lags[..., 2], lags[..., 0], lags[..., 4]], dim=-1),
              "done": torch.zeros(*bs, 1, dtype=torch.bool), "terminated": torch.zeros(*bs, 1, dtype=torch.bool)},
             batch_size=bs,
         )
-        hidden = self.transition.initial_hidden(bs)
+        hidden = self.transition.initial_hidden(bs, idx)
         if hidden is not None:
             out.set("hidden", hidden)
         return out
@@ -165,7 +183,7 @@ class MonetaryEnv(EnvBase):
         rate_prev = lags[..., 4]
         # The rate chosen now is next quarter's first lag; the previous rate becomes its second lag.
         state = torch.stack([lags[..., 0], lags[..., 1], lags[..., 2], lags[..., 3], rate, rate_prev], dim=-1)
-        eps = torch.randn(*bs, 2, generator=self._rng, dtype=ENV_DTYPE)
+        eps = self.noise_scale * torch.randn(*bs, 2, generator=self._rng, dtype=ENV_DTYPE)
         y_new, pi_new, hidden = self.transition(state, eps, tensordict.get("hidden", None))
 
         pi_new = pi_new.clamp(cfg.pi_star - cfg.macro_clamp_pi, cfg.pi_star + cfg.macro_clamp_pi)

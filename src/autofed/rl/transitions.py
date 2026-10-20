@@ -28,6 +28,7 @@ import copy
 import math
 from typing import Any, Final, Optional
 
+import pandas as pd
 import torch
 import torch.nn as nn
 
@@ -63,8 +64,14 @@ class Transition(nn.Module):
                 raise ValueError(f"{label} must be finite and non-negative, got {value!r}")
         self.register_buffer("sigma", torch.tensor([sigma_y, sigma_pi], dtype=ENV_DTYPE))
 
-    def initial_hidden(self, batch_size: torch.Size) -> Optional[torch.Tensor]:
-        """Latent state at reset; ``None`` for economies without one."""
+    def initial_hidden(self, batch_size: torch.Size, index: Optional[torch.Tensor] = None) -> Optional[torch.Tensor]:
+        """Latent state at reset; ``None`` for economies without one.
+
+        Args:
+            batch_size: Batch shape of the reset.
+            index: Row of the training data each episode starts from, shape ``batch_size``; economies
+                with a latent path start from the latent state of that quarter.
+        """
         return None
 
     def forward(self, state: torch.Tensor, eps: torch.Tensor,
@@ -107,29 +114,51 @@ def _scaler_affine(scaler: Any, label: str) -> tuple[torch.Tensor, torch.Tensor]
 
 
 class NARXTransition(Transition):
-    """Non-linear economy driven by the two restricted NARX networks."""
+    """Non-linear economy driven by the two restricted NARX networks.
+
+    Args:
+        economy: The fitted networks with their scalers.
+        clamp_inputs: Clip each network input to the range it was fitted on (the scaler's feature
+            range), so the environment never evaluates the networks outside the training support.
+    """
 
     _Y_INPUTS: Final = [0, 2, 4]            # y_lag1, pi_lag1, i_lag1
     _PI_INPUTS: Final = [0, 1, 2, 3, 4]     # y_lag1, y_lag2, pi_lag1, pi_lag2, i_lag1 (after contemporaneous y)
+    xs_y_scale: torch.Tensor
+    xs_y_offset: torch.Tensor
+    ys_y_scale: torch.Tensor
+    ys_y_offset: torch.Tensor
+    xs_pi_scale: torch.Tensor
+    xs_pi_offset: torch.Tensor
+    ys_pi_scale: torch.Tensor
+    ys_pi_offset: torch.Tensor
+    x_range: torch.Tensor
 
-    def __init__(self, economy: NARXEconomy) -> None:
+    def __init__(self, economy: NARXEconomy, *, clamp_inputs: bool = True) -> None:
         super().__init__(economy.sigma_y, economy.sigma_pi)
         if economy.net_y.input_size != 3 or economy.net_pi.input_size != 6:
             raise ValueError(f"expected NARX input sizes (3, 6), got ({economy.net_y.input_size}, {economy.net_pi.input_size})")
         self.net_y = _frozen_copy(economy.net_y)
         self.net_pi = _frozen_copy(economy.net_pi)
+        self.clamp_inputs = bool(clamp_inputs)
         for label, scaler in (("xs_y", economy.x_scaler_y), ("ys_y", economy.y_scaler_y),
                               ("xs_pi", economy.x_scaler_pi), ("ys_pi", economy.y_scaler_pi)):
             scale, offset = _scaler_affine(scaler, label)
             self.register_buffer(f"{label}_scale", scale)
             self.register_buffer(f"{label}_offset", offset)
+        lo, hi = economy.x_scaler_y.feature_range
+        self.register_buffer("x_range", torch.tensor([float(lo), float(hi)], dtype=ENV_DTYPE))
+
+    def _scaled(self, x: torch.Tensor, scale: torch.Tensor, offset: torch.Tensor) -> torch.Tensor:
+        z = x * scale + offset
+        return z.clamp(float(self.x_range[0]), float(self.x_range[1])) if self.clamp_inputs else z
 
     def forward(self, state: torch.Tensor, eps: torch.Tensor,
                 hidden: Optional[torch.Tensor] = None) -> tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
-        y_scaled = self.net_y(state[..., self._Y_INPUTS] * self.xs_y_scale + self.xs_y_offset)
+        y_scaled = self.net_y(self._scaled(state[..., self._Y_INPUTS], self.xs_y_scale, self.xs_y_offset))
         y_new = ((y_scaled - self.ys_y_offset) / self.ys_y_scale)[..., 0] + self.sigma[0] * eps[..., 0]
         feat_pi = torch.cat([y_new.unsqueeze(-1), state[..., self._PI_INPUTS]], dim=-1)
-        pi_scaled = self.net_pi(feat_pi * self.xs_pi_scale + self.xs_pi_offset)
+        pi_scaled = self.net_pi(self._scaled(feat_pi, self.xs_pi_scale, self.xs_pi_offset))
         pi_new = ((pi_scaled - self.ys_pi_offset) / self.ys_pi_scale)[..., 0] + self.sigma[1] * eps[..., 1]
         return y_new, pi_new, hidden
 
@@ -137,10 +166,19 @@ class NARXTransition(Transition):
 class NSSMTransition(Transition):
     """Non-linear economy driven by the two-block neural state-space model.
 
-    Every episode starts from the latent state reached at the end of the estimation window.
+    An episode that starts from quarter ``t`` of the training data starts from the latent state the
+    model reached in quarter ``t`` when run over the data (``economy.run``); without the data every
+    episode starts from the latent state at the end of the estimation window.
+
+    Args:
+        economy: The fitted model with its anchored latent states.
+        train: Estimation-window data with columns ``y``, ``pi``, ``i``; gives the latent path.
     """
 
-    def __init__(self, economy: NSSMEconomy) -> None:
+    h0: torch.Tensor
+    h_path: torch.Tensor
+
+    def __init__(self, economy: NSSMEconomy, train: Optional[pd.DataFrame] = None) -> None:
         super().__init__(economy.sigma_y, economy.sigma_pi)
         self.model = _frozen_copy(economy.model)
         h_y0 = economy.terminal_y.detach().reshape(-1).to(dtype=ENV_DTYPE, device=ENV_DEVICE)
@@ -150,9 +188,18 @@ class NSSMTransition(Transition):
         self._dim_y = int(h_y0.numel())
         self.hidden_dim = int(h_y0.numel() + h_pi0.numel())
         self.register_buffer("h0", torch.cat([h_y0, h_pi0]))
+        if train is None:
+            self.register_buffer("h_path", self.h0.unsqueeze(0).clone())
+        else:
+            _, states_y, states_pi = economy.run(train)
+            path = torch.cat([states_y, states_pi], dim=-1).detach().to(dtype=ENV_DTYPE, device=ENV_DEVICE)
+            # run() returns one state per quarter from the third on; the first two quarters take the first.
+            self.register_buffer("h_path", torch.cat([path[:1], path[:1], path], dim=0))
 
-    def initial_hidden(self, batch_size: torch.Size) -> torch.Tensor:
-        return self.h0.expand(*batch_size, -1).clone()
+    def initial_hidden(self, batch_size: torch.Size, index: Optional[torch.Tensor] = None) -> torch.Tensor:
+        if index is None:
+            return self.h0.expand(*batch_size, -1).clone()
+        return self.h_path[index.clamp(0, self.h_path.shape[0] - 1)].clone()
 
     def forward(self, state: torch.Tensor, eps: torch.Tensor,
                 hidden: Optional[torch.Tensor] = None) -> tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
