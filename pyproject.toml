@@ -27,8 +27,8 @@ dependencies = [
     "pandas",
     "scipy",
     "matplotlib",
-    "fedfred>=3.0",
-    "cultivars>=1.0.0a1",
+    "fedfred",
+    "cultivars",
 ]
 
 [project.optional-dependencies]
