@@ -1,13 +1,13 @@
                               Model Confidence Set
 ================================================================================
-Models:                              4  Origins:                            76
+Models:                              4  Origins:                            77
 Level:                             90%  In set:                              4
 --------------------------------------------------------------------------------
 model                   mean loss   MCS p
-Rolling W = 40            7.91546   0.290   in
-Expanding                 2.83869   0.397   in
-Fixed, restricted         1.83041   0.611   in
-Fixed, unrestricted       1.80466   1.000   in
+Rolling W = 40            7.81328   0.312   in
+Expanding                 2.80897   0.379   in
+Fixed, restricted         1.80776   0.649   in
+Fixed, unrestricted       1.78522   1.000   in
 ================================================================================
 4 of 4 models in the 90% set: Fixed, unrestricted, Fixed, restricted, Expanding,
 Rolling W = 40.

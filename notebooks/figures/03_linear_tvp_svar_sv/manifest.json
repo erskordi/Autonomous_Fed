@@ -8,7 +8,7 @@
       "label": "Table 3.1",
       "slug": "tvp_summary",
       "title": "TVP-VAR-SV(2): estimation summary",
-      "note": "Estimation sample 1987Q3-2026Q2 (T = 156); 750 kept draws per chain.",
+      "note": "Estimation sample 1987Q3-2026Q3 (T = 157); 750 kept draws per chain.",
       "file": "tab_03_01_tvp_summary.png"
     },
     {

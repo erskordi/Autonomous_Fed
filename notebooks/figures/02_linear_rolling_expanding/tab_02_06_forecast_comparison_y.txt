@@ -1,14 +1,14 @@
                               Forecast Comparison
 ================================================================================
-Origins:                            76  Horizon:                             1
-Mean differential:            +5.07676
+Origins:                            77  Horizon:                             1
+Mean differential:            +5.00431
 --------------------------------------------------------------------------------
 test                              statistic   p-value
-Diebold-Mariano                      1.1504    0.2500
-Harvey-Leybourne-Newbold             1.1428    0.2567
-Giacomini-White (conditional)        1.5109    0.4698
+Diebold-Mariano                      1.1488    0.2506
+Harvey-Leybourne-Newbold             1.1413    0.2573
+Giacomini-White (conditional)        1.5085    0.4704
 ================================================================================
-Mean loss differential +5.07676: the sign favors forecaster B (losses are
+Mean loss differential +5.00431: the sign favors forecaster B (losses are
 negatively oriented).
 The HLN row is the DM statistic with the small-sample correction, referred to a
 t distribution; in short evaluation windows it is the number to trust.

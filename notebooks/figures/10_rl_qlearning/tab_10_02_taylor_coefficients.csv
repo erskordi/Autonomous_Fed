@@ -1,0 +1,6 @@
+Economy,Policy,$\alpha_0$,$\beta_\pi$,$\beta_y$,$R^2$
+Reference rules,TR93,1.0,1.5,0.5,1.0
+Reference rules,NPP,0.0,2.0,0.5,1.0
+Reference rules,BA,1.0,1.5,1.0,1.0
+SVAR,Q-learning x1 tabular,4.041693596676252,0.2937944345031733,1.0993589832957378,0.4271972267676296
+NARX,Q-learning x1 tabular,2.1373625355757615,0.8629605896125594,-0.13876320545591125,0.23588796944965418

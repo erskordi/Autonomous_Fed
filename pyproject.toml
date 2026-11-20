@@ -29,6 +29,7 @@ dependencies = [
     "matplotlib",
     "fedfred",
     "cultivars",
+    "torchrl>=0.14.0",
 ]
 
 [project.optional-dependencies]

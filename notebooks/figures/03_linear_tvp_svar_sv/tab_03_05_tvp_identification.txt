@@ -1,12 +1,12 @@
                          TVP-SVAR (TVP-VAR-SV) Results
 ================================================================================
 Scheme:                      recursive  Reduced form:            TVP-VAR-SV(2)
-Observations:                      156  Kept draws:                        750
+Observations:                      157  Kept draws:                        750
 --------------------------------------------------------------------------------
 equation     |impact| at start   |impact| at end
-y                       0.6077            0.3661
-pi                      0.2143            0.5345
-i                       0.4908            0.2059
+y                       0.6042            0.4227
+pi                      0.2121            0.5736
+i                       0.4831            0.1651
 ================================================================================
 The identifying restriction is recursive in the order of names, declared at
 estimation time through the triangular factorization: a different ordering is a
